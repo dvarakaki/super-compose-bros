@@ -497,6 +497,116 @@ html, body {
 .dot.active { background: var(--accent-dim); transform: scale(1.2); }
 .dot.done   { background: #94a3b8; }
 
+/* ── SVG ICONS NO QUIZ ───────────────────────────────────── */
+.locked-icon, .wip-icon {
+  width: 72px; height: 72px;
+  margin: 0 auto 1.2rem;
+  display: block;
+}
+.locked-icon svg, .wip-icon svg { width: 100%; height: 100%; }
+.wip-icon { animation: bobbing 3s ease-in-out infinite; }
+
+/* ── TIMER ───────────────────────────────────────────────── */
+.question-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.timer-wrap {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  flex-shrink: 0;
+}
+.timer-svg {
+  width: 44px !important;
+  height: 44px !important;
+  max-width: 44px;
+  max-height: 44px;
+  display: block;
+}
+.timer-display {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  color: #0e7490;
+  font-weight: 700;
+  transition: color 0.3s;
+}
+.timer-display.timer-warning { color: #f97316; }
+.timer-display.timer-danger  {
+  color: #ef4444;
+  animation: timerPulse 0.5s ease-in-out infinite alternate;
+}
+@keyframes timerPulse {
+  from { transform: scale(1); }
+  to   { transform: scale(1.15); }
+}
+
+/* ── ANIMAÇÃO BOBBING (usada na fase em breve) ───────────── */
+@keyframes bobbing {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%       { transform: translateY(-10px) rotate(3deg); }
+}
+
+/* ── EXPLANATION ─────────────────────────────────────────── */
+.explanation {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  animation: fadeInUp 0.35s ease forwards;
+}
+.explanation i { flex-shrink: 0; margin-top: 2px; }
+.explanation-correct {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #14532d;
+}
+.explanation-correct i { color: #16a34a; }
+.explanation-wrong {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #78350f;
+}
+.explanation-wrong i { color: #d97706; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── LINK VOLTAR AO MAPA (no header do quiz) ─────────────── */
+.btn-back-map {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.28rem 0.65rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background 0.2s, color 0.2s;
+  text-decoration: none;
+  font-family: 'Inter', sans-serif;
+}
+.btn-back-map:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
 @media (max-width: 500px) {
   .card-header { flex-wrap: wrap; gap: 0.65rem; }
   .header-meta { flex-wrap: wrap; }
