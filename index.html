@@ -1,0 +1,1770 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>A Batalha Final</title>
+    <style>
+
+        /* ===== RESET / GLOBAL ===== */
+
+        * {
+            user-select: none;
+        }
+
+        img {
+            user-select: none;
+            -webkit-user-drag: none;
+            pointer-events: none;
+        }
+
+        body {
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        /* ===== CENÁRIO (fundo) ===== */
+
+        #cenario {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+        }
+
+        /* ===== PERSONAGENS ===== */
+
+        #p1,
+        #boss {
+            position: absolute;
+            bottom: 0;
+            left: 100px;
+        }
+
+        #magoVermelho {
+            width: 100px;
+            height: 100px;
+            clip-path: inset(50px 0 0 0);
+        }
+
+        #boss img {
+            width: 400px;
+            height: 400px;
+        }
+
+        /* ===== BARRA DE VIDA DO BOSS ===== */
+
+        #boss-hp-bar {
+            position: fixed;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            height: 13px;
+            border: 1px solid #111;
+            border-radius: 5px;
+            background: #333;
+            overflow: hidden;
+            z-index: 1000;
+        }
+
+        #boss-hp-fill {
+            width: 100%;
+            height: 100%;
+            background: rgb(200, 11, 11);
+            transition: width 0.3s ease;
+        }
+
+        /* ===== PAINEL DE VIDAS DO JOGADOR ===== */
+
+        .painel-vidas {
+            position: fixed;
+            bottom: 27px;
+            left: 36px;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #fff;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            width: 83px;
+            height: 12px;
+        }
+
+        #vidas-vermelho {
+            position: fixed;
+            bottom: 30px;
+            left: 40px;
+            display: flex;
+            gap: 8px;
+            z-index: 1000;
+        }
+
+        #vidas-vermelho img {
+            width: 30px;
+            height: 30px;
+            transition: opacity 0.3s;
+        }
+
+        /* ===== CABEÇA DO PERSONAGEM (container sobre o sprite) ===== */
+
+        #cabeca-container {
+            position: absolute;
+            top: 4px;
+            left: 10px;
+            pointer-events: none;
+            z-index: 50;
+            width: 105px;
+            height: 75px;
+            overflow: hidden;
+            border-radius: 50%;
+        }
+
+        #cabeca-personagem {
+            width: 75px;
+            height: 65px;
+            image-rendering: pixelated;
+            object-fit: fill;
+        }
+
+        /* ===== PROJÉTEIS ===== */
+
+        .projetil {
+            position: absolute;
+            pointer-events: none;
+        }
+
+        /* ===== BOTÃO DE PAUSE ===== */
+
+        #pause-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 3000;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #pause-button:focus,
+        #pause-button:focus-visible {
+            outline: none;
+            box-shadow: none;
+        }
+
+        /* ===== OVERLAY DE PAUSE ===== */
+
+        #pause-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            justify-content: center;
+            align-items: center;
+            z-index: 3500;
+            backdrop-filter: blur(5px);
+            background: rgba(5, 10, 30, 0.38);
+            opacity: 0;
+            transition: opacity .25s ease;
+        }
+
+        #pause-overlay.show    { opacity: 1; }
+        #pause-overlay.closing { opacity: 0; }
+
+        #pause-menu {
+            width: 500px;
+            padding: 45px;
+            border-radius: 22px;
+            background: linear-gradient(180deg, rgba(45,45,55,.92) 0%, rgba(20,20,25,.95) 100%);
+            border: 3px solid rgba(255,255,255,.15);
+            box-shadow: 0 0 50px rgba(0,0,0,.55), 0 25px 50px rgba(0,0,0,.6), inset 0 2px 2px rgba(255,255,255,.08);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            color: white;
+            transform: scale(.92);
+            opacity: 0;
+            transition: transform .25s ease, opacity .25s ease;
+        }
+
+        #pause-overlay.show    #pause-menu { transform: scale(1);   opacity: 1; }
+        #pause-overlay.closing #pause-menu { transform: scale(.88); opacity: 0; }
+
+        #pause-menu h2 {
+            font-size: 50px;
+            color: #f2f2f2;
+            letter-spacing: 3px;
+            margin-bottom: 35px;
+            text-shadow: 0 0 12px rgba(255,255,255,.12), 0 4px 8px rgba(0,0,0,.6);
+        }
+
+        #pause-menu button {
+            width: 340px;
+            height: 75px;
+            margin: 14px 0;
+            border: none;
+            border-radius: 18px;
+            cursor: pointer;
+            font-size: 22px;
+            font-weight: 900;
+            color: white;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+            transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
+        }
+
+        #pause-menu button::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0) 35%);
+            pointer-events: none;
+        }
+
+        #resume-button {
+            background: linear-gradient(180deg, #4ecb71 0%, #22863d 55%, #145224 100%);
+            box-shadow: 0 10px 0 #103d1b, 0 18px 35px rgba(0,0,0,.45), 0 0 25px rgba(0,255,90,.18);
+        }
+
+        #resume-button:hover {
+            transform: translateY(-2px) scale(1.01);
+            background: linear-gradient(180deg, #46b967 0%, #1f7a38 55%, #103f1c 100%);
+            box-shadow: 0 10px 0 #0d3116, 0 18px 35px rgba(0,0,0,.42), 0 0 25px rgba(0,255,90,.22);
+        }
+
+        #exit-button {
+            background: linear-gradient(180deg, #ff5d5d 0%, #a91d1d 50%, #5e0b0b 100%);
+            box-shadow: 0 10px 0 #420707, 0 18px 35px rgba(0,0,0,.45), 0 0 25px rgba(255,0,0,.2);
+        }
+
+        #exit-button:hover {
+            transform: translateY(-2px) scale(1.01);
+            background: linear-gradient(180deg, #d94a4a 0%, #8b1818 50%, #470808 100%);
+            box-shadow: 0 10px 0 #300505, 0 18px 35px rgba(0,0,0,.42), 0 0 25px rgba(255,0,0,.2);
+        }
+
+        #pause-menu button:active {
+            transform: translateY(5px) scale(.98);
+        }
+
+        /* ===== OVERLAY: BOSS DERROTADO (knockout) ===== */
+
+        #boss-dead-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        #boss-dead-overlay img {
+            max-width: 80%;
+            max-height: 80%;
+        }
+
+        #boss.boss-dead {
+            bottom: 73px !important;
+        }
+
+        /* ===== OVERLAY: GAME OVER ===== */
+
+        #game-over-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+        }
+
+        #game-over-overlay img {
+            max-width: 70%;
+            max-height: 50%;
+            margin-bottom: 30px;
+        }
+
+        #restart-button {
+            margin-top: 30px;
+            width: 400px;
+            height: 80px;
+            font-size: 24px;
+            font-family: 'Press Start 2P', cursive;
+            font-weight: 900;
+            color: white;
+            border: 4px solid #641818;
+            border-radius: 18px;
+            cursor: pointer;
+            letter-spacing: 2px;
+            background: linear-gradient(180deg, #ff4b4b 0%, #a31515 45%, #4d0909 100%);
+            text-shadow: 0 3px 5px rgba(0,0,0,.6);
+            box-shadow: 0 10px 0 #3d0808, 0 20px 35px rgba(0,0,0,.45), 0 0 30px rgba(255,0,0,.25), inset 0 2px 3px rgba(255,255,255,.15), inset 0 -10px 20px rgba(0,0,0,.3);
+            position: relative;
+            overflow: hidden;
+            transform: scale(0.9);
+            transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+        }
+
+        #restart-button::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,0) 40%);
+            pointer-events: none;
+        }
+
+        #restart-button:hover {
+            transform: translateY(-4px) scale(0.91);
+            filter: brightness(1.1);
+            box-shadow: 0 16px 0 #300707, 0 28px 45px rgba(0,0,0,.55), 0 0 45px rgba(255,0,0,.4), inset 0 2px 4px rgba(255,255,255,.2);
+        }
+
+        #restart-button:active {
+            transform: translateY(5px) scale(.98);
+            box-shadow: 0 5px 0 #2a0606, 0 10px 18px rgba(0,0,0,.3), inset 0 1px 2px rgba(255,255,255,.1);
+        }
+
+        /* ===== OVERLAY: VITÓRIA FINAL ===== */
+
+        #victory-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            justify-content: center;
+            align-items: center;
+            z-index: 4000;
+            background: rgba(0,0,0,0);
+            backdrop-filter: blur(0px);
+            opacity: 0;
+            transition: background 1s ease, backdrop-filter 1s ease, opacity .8s ease;
+        }
+
+        #victory-overlay.show {
+            opacity: 1;
+            background: rgba(0,0,0,0.72);
+            backdrop-filter: blur(8px);
+        }
+
+        #victory-box {
+            width: 85%;
+            max-width: 1100px;
+            min-height: 70vh;
+            padding: 40px;
+            border-radius: 24px;
+            background: rgba(10, 10, 10, 0.88);
+            border: 3px solid rgba(255,255,255,.12);
+            box-shadow: 0 0 40px rgba(0,0,0,.6), 0 0 80px rgba(255,255,255,.04);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            transform: translateY(100px) scale(.75);
+            filter: blur(20px);
+            opacity: 0;
+            transition: transform .8s cubic-bezier(.17,.89,.32,1.28), opacity .8s ease, filter .8s ease;
+        }
+
+        #victory-overlay.show #victory-box {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+            filter: blur(0);
+        }
+
+        #victory-box h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 42px;
+            color: #fff;
+            text-align: center;
+            line-height: 1.4;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity .7s ease .35s, transform .7s ease .35s;
+        }
+
+        #victory-overlay.show #victory-box h1 {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #victory-box img {
+            max-width: 95%;
+            max-height: 45vh;
+            image-rendering: pixelated;
+            transform: scale(1.2) translateY(40px);
+            opacity: 0;
+            transition: transform .8s ease .25s, opacity .8s ease .25s;
+        }
+
+        #victory-overlay.show #victory-box img {
+            transform: scale(1.5) translateY(0);
+            opacity: 1;
+        }
+
+        #continue-button {
+            align-self: flex-end;
+            margin-top: auto;
+            margin-right: 10px;
+            width: 260px;
+            height: 70px;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(180deg, #4ecb71 0%, #22863d 55%, #145224 100%);
+            box-shadow: 0 10px 0 #103d1b, 0 18px 35px rgba(0,0,0,.45), 0 0 25px rgba(0,255,90,.18);
+            transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
+        }
+
+        #continue-button::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 40%);
+            pointer-events: none;
+        }
+
+        #continue-button:hover {
+            transform: translateY(-3px) scale(1.01);
+            filter: brightness(1.08);
+            background: linear-gradient(180deg, #5bdd80 0%, #289a47 55%, #17612b 100%);
+            box-shadow: 0 14px 0 #0d3116, 0 24px 40px rgba(0,0,0,.5), 0 0 35px rgba(0,255,90,.25);
+        }
+
+        #continue-button:active {
+            transform: translateY(5px) scale(.98);
+            box-shadow: 0 5px 0 #0b2a13, 0 10px 18px rgba(0,0,0,.3);
+        }
+
+        /* ===== ESTADOS DO JOGADOR ===== */
+
+        .imune {
+            opacity: 0.99;
+            pointer-events: none;
+        }
+
+        #p1.imune img {
+            opacity: 0.7;
+            filter: grayscale(60%);
+        }
+
+        .jogador-morto {
+            opacity: 0;
+        }
+
+        /* ===== FANTASMA (animação de morte) ===== */
+
+        .ghost {
+            position: absolute;
+            pointer-events: none;
+            width: 100px;
+            height: 100px;
+            animation-duration: 2s;
+            animation-fill-mode: forwards;
+            opacity: 0.6;
+            z-index: 1500;
+            animation-play-state: running !important;
+        }
+
+        @keyframes ghost-left {
+            0%   { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-100px) scale(0.8) rotate(-10deg); }
+        }
+
+        @keyframes ghost-right {
+            0%   { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-100px) scale(0.8) rotate(10deg); }
+        }
+
+        /* ===== TELA INICIAL ===== */
+
+        #start-screen {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+            backdrop-filter: blur(6px);
+            background: rgba(5, 10, 30, 0.65);
+            transition: opacity .5s ease, transform .5s ease, filter .5s ease;
+        }
+
+        #start-screen.starting {
+            opacity: 0;
+            transform: scale(1.08);
+            filter: blur(10px);
+        }
+
+        #menu-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(.3) brightness(.75) blur(6px);
+            transform: scale(1.1);
+            z-index: -1;
+        }
+
+        #start-box {
+            width: 80%;
+            max-width: 1100px;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            font-family: 'Press Start 2P', cursive;
+            transform: scale(0.9);
+            animation: menuEnter .8s ease;
+        }
+
+        #start-box h1 {
+            font-size: 55px;
+            margin-bottom: 40px;
+            color: #ddd;
+        }
+
+        #controls-container {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin-bottom: 40px;
+        }
+
+        .control-card {
+            padding: 30px;
+            width: 350px;
+        }
+
+        .control-card.segundo {
+            margin-top: 60px;
+        }
+
+        .control-card p {
+            font-size: 40px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .keys {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .top-key {
+            margin-bottom: 10px;
+        }
+
+        .bottom-keys {
+            display: flex;
+            gap: 10px;
+        }
+
+        .top-key,
+        .bottom-keys div,
+        .single-key {
+            width: 90px;
+            height: 90px;
+            background: #222;
+            border: 4px solid black;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 50px;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgb(135, 135, 135);
+        }
+
+        .single-key {
+            margin: auto;
+        }
+
+        #start-button {
+            width: 720px;
+            height: 95px;
+            margin-top: -170px;
+            border: 5px solid #4d4c50;
+            border-radius: 20px;
+            font-size: 30px;
+            font-weight: 900;
+            color: white;
+            font-family: 'Press Start 2P', cursive;
+            background: linear-gradient(180deg, #747077 0%, #2c2c2c 38%, #474648 100%);
+            cursor: pointer;
+            text-shadow: 0 3px 5px rgba(0,0,0,.6);
+            box-shadow: 0 12px 0 #38373a, 0 24px 42px rgba(32,32,32,0.45), 0 0 30px rgba(48,47,50,0.45), inset 0 2px 3px rgba(255,255,255,.16), inset 0 -10px 28px rgba(37,37,37,0.45);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 2px;
+            transform: scale(0.8);
+            transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+        }
+
+        #start-button::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0) 40%);
+            pointer-events: none;
+        }
+
+        #start-button:hover {
+            transform: translateY(-4px) scale(0.81);
+            filter: brightness(1.12);
+            box-shadow: 0 18px 0 #2d2b31, 0 32px 45px rgba(0,0,0,.55), 0 0 45px rgba(54,43,60,0.55), inset 0 3px 4px rgba(255,255,255,.2);
+        }
+
+        #start-button:active {
+            transform: translateY(6px) scale(.83);
+            box-shadow: 0 6px 0 #39383a, 0 10px 18px rgba(0,0,0,.25), inset 0 1px 2px rgba(255,255,255,.1);
+        }
+
+        @keyframes menuEnter {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(.92);
+                filter: blur(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(.9);
+                filter: blur(0);
+            }
+        }
+
+        /* ===== FADE DE TRANSIÇÃO ("PREPARE-SE...") ===== */
+
+        #transition-fade {
+            position: fixed;
+            inset: 0;
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 999999;
+            transition: opacity 1s ease;
+        }
+
+        #transition-fade.show { opacity: 1; }
+
+        #prepare-text {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 42px;
+            color: white;
+            letter-spacing: 4px;
+            opacity: 0;
+            transform: scale(.9);
+            transition: opacity .6s ease, transform .6s ease;
+            text-shadow: 0 0 15px rgba(255,255,255,.25), 0 0 35px rgba(255,255,255,.15);
+        }
+
+        #prepare-text.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* ===== CUTSCENE ===== */
+
+        #cutscene-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50000;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        #cutscene-overlay.hidden { display: none; }
+
+        /* Balão de fala estilo HQ */
+        .speech-bubble {
+            position: absolute;
+            background: white;
+            border: 3px solid #111;
+            border-radius: 18px;
+            padding: 16px 26px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 19px;
+            color: #111;
+            white-space: nowrap;
+            box-shadow: 3px 3px 0 #111;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 50001;
+        }
+
+        /* seta do balão apontando para baixo-esquerda (mago) */
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -14px;
+            left: 20px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 14px solid #111;
+        }
+
+        /* seta do balão apontando para baixo-direita (boss) */
+        .speech-bubble.bubble-boss::after {
+            left: auto;
+            right: 20px;
+        }
+
+        .speech-bubble.show { opacity: 1; }
+
+        /* Mago na cutscene */
+        #cutscene-mago {
+            position: absolute;
+            bottom: -200px;
+            width: 100px;
+            height: 100px;
+        }
+
+        #cutscene-mago img.sprite {
+            width: 100px;
+            height: 100px;
+            clip-path: inset(50px 0 0 0);
+        }
+
+        #cutscene-mago .cabeca-cut {
+            width: 105px;
+            height: 75px;
+            position: absolute;
+            top: 4px;
+            left: 10px;
+            overflow: hidden;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        #cutscene-mago .cabeca-cut img {
+            image-rendering: pixelated;
+            object-fit: fill;
+            pointer-events: none;
+        }
+
+        /* Boss na cutscene */
+        #cutscene-boss {
+            position: absolute;
+            bottom: 85px;
+            width: 400px;
+            height: 400px;
+        }
+
+        #cutscene-boss img {
+            width: 400px;
+            height: 400px;
+        }
+
+        /* Posicionamento inicial dos balões (ajustado via JS) */
+        #cutscene-bubble-mago  { bottom: 210px; }
+        #cutscene-bubble-boss  { bottom: 490px; }
+
+        /* ===== ELEMENTOS VISÍVEIS APENAS DURANTE O JOGO ===== */
+        /* Ocultos até a cutscene terminar */
+
+        #p1,
+        #boss,
+        #boss-hp-bar,
+        #pause-button,
+        #painel-vermelho {
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ===== TELA INICIAL ===== -->
+    <div id="start-screen">
+
+        <img src="imagens/fundoSalvar.png" id="menu-bg">
+
+        <div id="start-box">
+
+            <h1>ANTES DE COMEÇAR...<br>CONTROLES BÁSICOS:</h1>
+
+            <div id="controls-container">
+
+                <div class="control-card">
+                    <div class="keys">
+                        <div class="top-key">W</div>
+                        <div class="bottom-keys">
+                            <div>A</div>
+                            <div>S</div>
+                            <div>D</div>
+                        </div>
+                    </div>
+                    <p>ANDAR</p>
+                </div>
+
+                <div class="control-card segundo">
+                    <div class="single-key">F</div>
+                    <p>ATIRAR</p>
+                </div>
+
+            </div>
+
+            <button id="start-button">Pressione 'ESPAÇO' para Iniciar</button>
+
+        </div>
+    </div>
+
+    <!-- ===== FADE DE TRANSIÇÃO ===== -->
+    <div id="transition-fade">
+        <div id="prepare-text">PREPARE-SE...</div>
+    </div>
+
+    <!-- ===== CUTSCENE ===== -->
+    <div id="cutscene-overlay" class="hidden">
+
+        <div class="speech-bubble" id="cutscene-bubble-mago">Cadê o Cthulhu?</div>
+        <div class="speech-bubble bubble-boss" id="cutscene-bubble-boss">Eu estou aqui!!! HAHAHAHAHA</div>
+
+        <div id="cutscene-mago">
+            <img src="imagens/Mago-azul-correndo.gif" class="sprite" id="cutscene-mago-sprite">
+            <div class="cabeca-cut">
+                <img id="cutscene-cabeca-img" src="">
+            </div>
+        </div>
+
+        <div id="cutscene-boss" style="opacity:0;">
+            <img src="imagens/monster.gif" alt="Boss">
+        </div>
+
+    </div>
+
+    <!-- ===== CENÁRIO (fundo de jogo) ===== -->
+    <img src="imagens/fundoSalvar.png" id="cenario">
+
+    <!-- ===== HUD ===== -->
+    <div id="boss-hp-bar">
+        <div id="boss-hp-fill"></div>
+    </div>
+
+    <button id="pause-button">❚❚</button>
+
+    <div class="painel-vidas" id="painel-vermelho">
+        <div id="vidas-vermelho">
+            <img src="imagens/Coraçao vermelho pegar png.png">
+            <img src="imagens/Coraçao vermelho pegar png.png">
+            <img src="imagens/Coraçao vermelho pegar png.png">
+        </div>
+    </div>
+
+    <!-- ===== PERSONAGENS ===== -->
+    <div id="p1">
+        <img src="imagens/Mago-azul-parado.gif" id="magoVermelho">
+        <div id="cabeca-container">
+            <img id="cabeca-personagem" src="">
+        </div>
+    </div>
+
+    <div id="boss">
+        <img src="imagens/monster.gif" id="bossImg" alt="Boss">
+    </div>
+
+    <!-- ===== OVERLAYS ===== -->
+
+    <!-- Pause -->
+    <div id="pause-overlay">
+        <div id="pause-menu">
+            <h2>Jogo Pausado</h2>
+            <button id="resume-button">Retomar</button>
+            <button id="exit-button">Sair do Jogo</button>
+        </div>
+    </div>
+
+    <!-- Boss derrotado (knockout) -->
+    <div id="boss-dead-overlay">
+        <img src="imagens/Cuphead_Knockout.png" alt="Boss Derrotado">
+    </div>
+
+    <!-- Game Over -->
+    <div id="game-over-overlay">
+        <img src="imagens/game-over.png" alt="Game Over">
+        <button id="restart-button">Tentar Novamente</button>
+    </div>
+
+    <!-- Vitória final -->
+    <div id="victory-overlay">
+        <div id="victory-box">
+            <h1>Você conseguiu salvar o Carlinhos!!!</h1>
+            <img src="imagens/carlinhos.png" alt="Vitória">
+            <button id="continue-button">Continuar</button>
+        </div>
+    </div>
+
+    <script>
+
+        // ===== CABEÇAS DISPONÍVEIS =====
+        // Definidas antes da cutscene para que cabecaAleatoria possa ser usada em todo o script.
+
+        const cabecas = [
+            {
+                src: 'imagens/igor-careca2.png',
+                top: '-23px', leftEsq: '-7px', leftDir: '-2.5px',
+                width: '110px', height: '130px',
+                objectPosition: 'center', borderRadius: '50%',
+                espelhar: true
+            },
+            {
+                src: 'imagens/souza-careca3.png',
+                top: '-26px', leftEsq: '-6px', leftDir: '-3px',
+                width: '110px', height: '120px',
+                objectPosition: 'center', borderRadius: '50%',
+                espelhar: true
+            },
+            {
+                src: 'imagens/edu-carega2.png',
+                top: '-21px', leftEsq: '7px', leftDir: '8px',
+                width: '87px', height: '110px',
+                objectPosition: 'center', borderRadius: '50%',
+                espelhar: true
+            },
+            {
+                src: 'imagens/rafa-careca1.png',
+                top: '-18px', leftEsq: '7.5px', leftDir: '11px',
+                width: '82px', height: '100px',
+                objectPosition: 'center', borderRadius: '50%',
+                espelhar: true
+            },
+            {
+                src: 'imagens/arakaki-careca1.png',
+                top: '-19px', leftEsq: '5px', leftDir: '5.5px',
+                width: '92px', height: '120px',
+                objectPosition: 'center', borderRadius: '50%',
+                espelhar: true
+            },
+        ];
+
+        const cabecaAleatoria = cabecas[Math.floor(Math.random() * cabecas.length)];
+
+        // ===== REFERÊNCIAS DOM =====
+
+        const cutsceneOverlay    = document.getElementById('cutscene-overlay');
+        const cutsceneMago       = document.getElementById('cutscene-mago');
+        const cutsceneMagoSprite = document.getElementById('cutscene-mago-sprite');
+        const cutsceneCabecaImg  = document.getElementById('cutscene-cabeca-img');
+        const cutsceneBoss       = document.getElementById('cutscene-boss');
+        const bubbleMago         = document.getElementById('cutscene-bubble-mago');
+        const bubbleBoss         = document.getElementById('cutscene-bubble-boss');
+
+        const magoVermelho   = document.getElementById('p1');
+        const imgVermelho    = document.getElementById('magoVermelho');
+        const boss           = document.getElementById('boss');
+        const bossImg        = document.getElementById('bossImg');
+        const overlay        = document.getElementById('boss-dead-overlay');
+        const cabecaImg      = document.getElementById('cabeca-personagem');
+        const cabecaContainer = document.getElementById('cabeca-container');
+
+        const pauseBtn  = document.getElementById('pause-button');
+        const pauseOv   = document.getElementById('pause-overlay');
+        const resumeBtn = document.getElementById('resume-button');
+        const exitBtn   = document.getElementById('exit-button');
+
+        const coracoesVermelho = document.querySelectorAll('#vidas-vermelho img');
+
+        // Elementos ocultados durante a cutscene e revelados ao iniciar o jogo
+        const elementosJogo = [
+            magoVermelho,
+            boss,
+            document.getElementById('boss-hp-bar'),
+            pauseBtn,
+            document.getElementById('painel-vermelho')
+        ];
+
+        // ===== VARIÁVEIS DE ESTADO =====
+
+        let jogoPausado      = true;
+        let projetisAtivos   = [];
+
+        let imuneVermelho       = false;
+        let tempoImuneVermelho  = 0;
+        let ultimaDirVermelho   = 'dir';
+        let atacandoVermelho    = false;
+        const attackDuration    = 900;
+
+        let vidasVermelho  = 3;
+        let mortoVermelho  = false;
+
+        const bossProjetilSrc = 'imagens/bouncy_ball.gif.jpg';
+        let bossAttackInterval;
+
+        // ===== FÍSICA / POSICIONAMENTO =====
+
+        let posX = 100, posY = 100, vel = 3, vy = 0, pulando = false;
+        const grav = 0.3, forca = 10, chao = 96;
+
+        let bossX        = window.innerWidth + 150;
+        const bossY      = 85;
+        const targetBossX = window.innerWidth - 500;
+        const bossSpeed  = 2;
+
+        // ===== BOSS / FASES =====
+
+        const bossMaxHealth  = 20;
+        let bossHealth       = bossMaxHealth;
+        const FIREBALL_PHASE = 0.5;
+        let firePhaseOn      = false;
+        let fireballInterval = null;
+        let cenouraSpawnada  = false;
+        const cenouraVel     = 3;
+
+        let podeContinuarVictory = false;
+
+        // ===== TECLAS =====
+
+        const teclas = { KeyW: false, KeyA: false, KeyD: false, KeyF: false };
+
+        function onKeyDown(e) {
+            if (teclas.hasOwnProperty(e.code)) {
+                teclas[e.code] = true;
+                e.preventDefault();
+            }
+        }
+
+        function onKeyUp(e) {
+            if (teclas.hasOwnProperty(e.code)) {
+                teclas[e.code] = false;
+                e.preventDefault();
+            }
+        }
+
+        document.addEventListener('keydown', onKeyDown);
+        document.addEventListener('keyup', onKeyUp);
+
+        // ===== CUTSCENE =====
+
+        function posicionarBubbleMago() {
+            const magoRect = cutsceneMago.getBoundingClientRect();
+            bubbleMago.style.left   = (magoRect.left + 5) + 'px';
+            bubbleMago.style.bottom = (window.innerHeight - magoRect.top + 40) + 'px';
+        }
+
+        function posicionarBubbleBoss() {
+            const bossRect = cutsceneBoss.getBoundingClientRect();
+            bubbleBoss.style.right  = (window.innerWidth - bossRect.right + 120) + 'px';
+            bubbleBoss.style.bottom = (window.innerHeight - bossRect.top + 0) + 'px';
+        }
+
+        function executarCutscene(onFinish) {
+
+            jogoPausado = true;
+
+            elementosJogo.forEach(el => { if (el) el.style.display = 'none'; });
+            cutsceneOverlay.classList.remove('hidden');
+
+            // Configura cabeça do mago na cutscene (idêntico ao jogo)
+            const cabecaContCut = cutsceneMago.querySelector('.cabeca-cut');
+
+            cabecaContCut.style.top          = cabecaAleatoria.top;
+            cabecaContCut.style.left         = cabecaAleatoria.leftDir;
+            cabecaContCut.style.width        = cabecaAleatoria.width;
+            cabecaContCut.style.height       = cabecaAleatoria.height;
+            cabecaContCut.style.borderRadius = cabecaAleatoria.borderRadius;
+
+            cutsceneCabecaImg.src                  = cabecaAleatoria.src;
+            cutsceneCabecaImg.style.width          = cabecaAleatoria.width;
+            cutsceneCabecaImg.style.height         = cabecaAleatoria.height;
+            cutsceneCabecaImg.style.objectPosition = cabecaAleatoria.objectPosition;
+            cutsceneCabecaImg.style.objectFit      = 'fill';
+
+            const screenW     = window.innerWidth;
+            const chaoBottom  = 100;
+
+            // Fase 1 — Mago aparece pela esquerda
+            cutsceneMago.style.left       = '-300px';
+            cutsceneMago.style.bottom     = chaoBottom + 'px';
+            cutsceneMago.style.transition = 'none';
+            cutsceneMagoSprite.src        = 'imagens/Mago-azul-parado.gif';
+
+            setTimeout(() => {
+                cutsceneMago.style.transition = 'left 1.8s cubic-bezier(.17,.89,.32,1.28)';
+                cutsceneMago.style.left = '80px';
+            }, 200);
+
+            // Fase 2 — Mago anda para a direita e volta
+            setTimeout(() => {
+
+                cutsceneMagoSprite.src            = 'imagens/Mago-azul-correndo.gif';
+                cabecaContCut.style.left          = cabecaAleatoria.leftDir;
+                cabecaContCut.style.transform     = cabecaAleatoria.espelhar ? 'scaleX(-1)' : 'scaleX(1)';
+
+                const destDir = screenW * 0.38;
+                const durDir  = 1200;
+
+                cutsceneMago.style.transition = `left ${durDir}ms linear, bottom 0.6s cubic-bezier(.17,.89,.32,1.28)`;
+                cutsceneMago.style.left = destDir + 'px';
+
+                // Volta para a esquerda
+                setTimeout(() => {
+
+                    cutsceneMagoSprite.src        = 'imagens/Mago-azul-correndo-esquerdo.gif';
+                    cabecaContCut.style.left      = cabecaAleatoria.leftEsq;
+                    cabecaContCut.style.transform = cabecaAleatoria.espelhar ? 'scaleX(1)' : 'scaleX(-1)';
+
+                    cutsceneMago.style.transition = `left 900ms linear`;
+                    cutsceneMago.style.left = (screenW * 0.10) + 'px';
+
+                    setTimeout(() => {
+
+                        // Para, olha para a direita
+                        cutsceneMagoSprite.src        = 'imagens/Mago-azul-parado.gif';
+                        cabecaContCut.style.left      = cabecaAleatoria.leftDir;
+                        cabecaContCut.style.transform = cabecaAleatoria.espelhar ? 'scaleX(-1)' : 'scaleX(1)';
+
+                        // Fase 3 — Balão "Cadê o Cthulhu?"
+                        posicionarBubbleMago();
+                        bubbleMago.classList.add('show');
+
+                        // Fase 4 — Boss entra pela direita
+                        setTimeout(() => {
+
+                            cutsceneBoss.style.right      = '-400px';
+                            cutsceneBoss.style.left       = 'auto';
+                            cutsceneBoss.style.bottom     = '85px';
+                            cutsceneBoss.style.transition = 'none';
+                            cutsceneBoss.style.opacity    = '1';
+
+                            setTimeout(() => {
+
+                                cutsceneBoss.style.transition = 'right 1s cubic-bezier(.17,.89,.32,1.28)';
+                                cutsceneBoss.style.right = '20px';
+
+                                // Fase 5 — Balão do boss
+                                setTimeout(() => {
+
+                                    bubbleMago.classList.remove('show');
+                                    posicionarBubbleBoss();
+                                    bubbleBoss.classList.add('show');
+
+                                    // Fase 6 — Transição para o jogo
+                                    setTimeout(() => {
+
+                                        bubbleBoss.classList.remove('show');
+
+                                        const fade    = document.getElementById('transition-fade');
+                                        const prepare = document.getElementById('prepare-text');
+
+                                        fade.classList.add('show');
+
+                                        setTimeout(() => {
+
+                                            prepare.classList.add('show');
+                                            cutsceneOverlay.classList.add('hidden');
+
+                                            setTimeout(() => {
+
+                                                prepare.classList.remove('show');
+
+                                                setTimeout(() => {
+
+                                                    elementosJogo.forEach(el => { if (el) el.style.display = 'block'; });
+                                                    onFinish();
+
+                                                    setTimeout(() => { fade.classList.remove('show'); }, 100);
+
+                                                }, 700);
+
+                                            }, 1800);
+
+                                        }, 1000);
+
+                                    }, 2500);
+
+                                }, 800);
+
+                            }, 50);
+
+                        }, 1500);
+
+                    }, 950);
+
+                }, durDir + 200);
+
+            }, 900);
+        }
+
+        // ===== TELA INICIAL =====
+
+        const startScreen = document.getElementById('start-screen');
+        const startButton = document.getElementById('start-button');
+
+        function iniciarJogo() {
+            jogoPausado = true;
+            startButton.disabled = true;
+
+            startScreen.classList.add('starting');
+
+            setTimeout(() => {
+
+                startScreen.style.display = 'none';
+
+                executarCutscene(() => {
+
+                    jogoPausado = false;
+
+                    magoVermelho.style.left   = posX + 'px';
+                    magoVermelho.style.bottom = posY + 'px';
+
+                    bossX = targetBossX;
+                    boss.style.left   = bossX + 'px';
+                    boss.style.bottom = bossY + 'px';
+
+                    cabecaContainer.style.left = ultimaDirVermelho === 'esq'
+                        ? cabecaAleatoria.leftEsq
+                        : cabecaAleatoria.leftDir;
+
+                    cabecaContainer.style.transform = ultimaDirVermelho === 'esq'
+                        ? (cabecaAleatoria.espelhar ? 'scaleX(1)'  : 'scaleX(-1)')
+                        : (cabecaAleatoria.espelhar ? 'scaleX(-1)' : 'scaleX(1)');
+
+                    andar();
+                });
+
+            }, 550);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && startScreen.style.display !== 'none') iniciarJogo();
+        });
+
+        startButton.addEventListener('click', iniciarJogo);
+
+        // ===== PAUSE =====
+
+        function showPauseMenu() {
+            jogoPausado = true;
+            pauseOv.style.display = 'flex';
+            pauseOv.classList.remove('closing');
+            pauseOv.classList.add('show');
+        }
+
+        function hidePauseMenu() {
+            pauseOv.classList.add('closing');
+            setTimeout(() => {
+                pauseOv.classList.remove('show', 'closing');
+                pauseOv.style.display = 'none';
+                jogoPausado = false;
+                requestAnimationFrame(andar);
+            }, 250);
+        }
+
+        function exitGame() { location.reload(); }
+
+        pauseBtn.addEventListener('click',  (e) => { e.stopPropagation(); showPauseMenu(); });
+        resumeBtn.addEventListener('click', hidePauseMenu);
+        exitBtn.addEventListener('click',   exitGame);
+
+        document.getElementById('pause-menu').addEventListener('click', (e) => e.stopPropagation());
+
+        document.addEventListener('click', (e) => {
+            if (jogoPausado && pauseOv.style.display === 'flex') {
+                if (!document.getElementById('pause-menu').contains(e.target)) hidePauseMenu();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (pauseOv.style.display === 'flex' && (e.code === 'Enter' || e.code === 'Space')) {
+                e.preventDefault();
+                e.stopPropagation();
+                hidePauseMenu();
+            }
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && !jogoPausado) showPauseMenu();
+        });
+
+        // ===== VIDAS / MORTE DO JOGADOR =====
+
+        function checarSobreposicao(rect1, rect2) {
+            return !(
+                rect1.right  < rect2.left   + 50 ||
+                rect1.left   > rect2.right  - 50 ||
+                rect1.bottom < rect2.top    + 40 ||
+                rect1.top    > rect2.bottom - 20
+            );
+        }
+
+        function checarColisao() {
+            const rectVermelho = magoVermelho.getBoundingClientRect();
+            const rectBoss     = bossImg.getBoundingClientRect();
+
+            const rectExpandido = {
+                left:   rectVermelho.left,
+                right:  rectVermelho.right,
+                bottom: rectVermelho.bottom,
+                top:    rectVermelho.top - 10
+            };
+
+            if (!imuneVermelho && checarSobreposicao(rectExpandido, rectBoss)) perderVida();
+        }
+
+        function perderVida() {
+            if (!imuneVermelho && vidasVermelho > 0) {
+                vidasVermelho--;
+                coracoesVermelho[vidasVermelho].style.opacity = 0.2;
+                imuneVermelho      = true;
+                magoVermelho.classList.add('imune');
+                tempoImuneVermelho = performance.now();
+
+                if (vidasVermelho === 0) magoMorreu();
+            }
+        }
+
+        function magoMorreu() {
+            mortoVermelho = true;
+            magoVermelho.classList.add('jogador-morto');
+            spawnGhost(magoVermelho, ultimaDirVermelho);
+            teclas.KeyW = teclas.KeyA = teclas.KeyD = teclas.KeyF = false;
+            verificarGameOver();
+        }
+
+        function verificarGameOver() {
+            if (!mortoVermelho) return;
+
+            jogoPausado = true;
+
+            document.querySelectorAll('img').forEach(img => {
+                if (!img.src.includes('Knockout')) img.style.animationPlayState = 'paused';
+            });
+
+            document.querySelectorAll('#p1 img, #boss img, .projetil').forEach(el => {
+                if (el) el.style.animationPlayState = 'paused';
+            });
+
+            projetisAtivos.forEach(p => p.remove());
+            projetisAtivos = [];
+
+            clearInterval(bossAttackInterval);
+            if (fireballInterval) clearInterval(fireballInterval);
+
+            setTimeout(() => {
+                document.getElementById('game-over-overlay').style.display = 'flex';
+            }, 10);
+        }
+
+        function spawnGhost(magoElem, ultimaDir) {
+            const rect  = magoElem.getBoundingClientRect();
+            const ghost = document.createElement('img');
+            ghost.src   = 'imagens/c438037dec8de2accd9a77cb49bd11bd.gif';
+            ghost.classList.add('ghost');
+            ghost.style.animationName = (ultimaDir === 'esq') ? 'ghost-left' : 'ghost-right';
+            ghost.style.left   = rect.left + 'px';
+            ghost.style.bottom = (window.innerHeight - rect.bottom) + 'px';
+            document.body.appendChild(ghost);
+            ghost.addEventListener('animationend', () => ghost.remove());
+        }
+
+        // ===== BOSS: VIDA E FASES =====
+
+        function atualizarBossHp() {
+            const pct = Math.max(0, bossHealth / bossMaxHealth) * 100;
+            document.getElementById('boss-hp-fill').style.width = pct + '%';
+
+            if (bossHealth <= 0) {
+                morrerBoss();
+                return;
+            }
+
+            if (!firePhaseOn && bossHealth <= FIREBALL_PHASE * bossMaxHealth) {
+                firePhaseOn      = true;
+                fireballInterval = setInterval(spawnFallingFireball, 500);
+            }
+
+            if (!cenouraSpawnada && bossHealth <= bossMaxHealth * 0.2) {
+                spawnCenoura();
+                cenouraSpawnada = true;
+            }
+        }
+
+        function morrerBoss() {
+            bossHealth = 0;
+
+            clearInterval(bossAttackInterval);
+            clearInterval(fireballInterval);
+
+            document.querySelectorAll('.projetil').forEach(p => p.remove());
+            projetisAtivos = [];
+
+            bossImg.src = 'imagens/monster-derrotado.png';
+            boss.classList.add('boss-dead');
+            overlay.style.display = 'flex';
+
+            for (let k in teclas) teclas[k] = false;
+            document.removeEventListener('keydown', onKeyDown);
+            document.removeEventListener('keyup', onKeyUp);
+
+            imgVermelho.src = 'imagens/Mago-azul-parado.gif';
+
+            setTimeout(() => {
+
+                overlay.style.display  = 'none';
+                podeContinuarVictory   = false;
+
+                const victory = document.getElementById('victory-overlay');
+                victory.style.display = 'flex';
+
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        victory.classList.add('show');
+                        setTimeout(() => { podeContinuarVictory = true; }, 1200);
+                    });
+                });
+
+            }, 1500);
+        }
+
+        // ===== PROJÉTEIS DO BOSS =====
+
+        function criarProjetilBoss() {
+            if (jogoPausado || bossHealth <= 0) return;
+
+            const rectBoss = bossImg.getBoundingClientRect();
+            const p        = document.createElement('img');
+            p.src          = bossProjetilSrc;
+            p.classList.add('projetil');
+            p.style.width  = '60px';
+            p.style.height = '60px';
+
+            const alturaMin      = 150;
+            const alturaMax      = 600;
+            const alturaAleatoria = Math.random() * (alturaMax - alturaMin) + alturaMin;
+
+            p.style.left   = (rectBoss.left + 100) + 'px';
+            p.style.bottom = (rectBoss.bottom - alturaAleatoria) + 'px';
+            document.body.appendChild(p);
+
+            let x          = rectBoss.left + 100;
+            const speed    = -4;
+            const size     = 60;
+
+            (function mover() {
+                if (bossHealth <= 0) { p.remove(); return; }
+                if (jogoPausado)     { requestAnimationFrame(mover); return; }
+
+                x += speed;
+                p.style.left = x + 'px';
+
+                if (!mortoVermelho) {
+                    const rectV = magoVermelho.getBoundingClientRect();
+                    const rectVermelho = {
+                        left: rectV.left, right: rectV.right,
+                        bottom: rectV.bottom, top: rectV.top - 30
+                    };
+                    if (!imuneVermelho && checarSobreposicao(p.getBoundingClientRect(), rectVermelho)) {
+                        perderVida();
+                        p.remove();
+                        return;
+                    }
+                }
+
+                if (x < -size * 2 || x > window.innerWidth + size * 2) { p.remove(); return; }
+                requestAnimationFrame(mover);
+            })();
+
+            projetisAtivos.push(p);
+        }
+
+        // ===== PROJÉTEIS DO JOGADOR =====
+
+        function criarProjetil(x, y, dir, src, size) {
+            if (jogoPausado || bossHealth <= 0) return;
+
+            const p        = document.createElement('img');
+            p.src          = src;
+            p.classList.add('projetil');
+            p.style.width  = size + 'px';
+            p.style.height = size + 'px';
+            p.style.left   = x + 'px';
+            p.style.bottom = y + 'px';
+            document.body.appendChild(p);
+
+            const v = 8 * dir;
+
+            function detectarColisao(proj, bossSpr) {
+                const r1 = proj.getBoundingClientRect();
+                const rb = bossSpr.getBoundingClientRect();
+                return !(
+                    r1.right  < rb.left   + 75 ||
+                    r1.left   > rb.right  - 60 ||
+                    r1.bottom < rb.top    + 40 ||
+                    r1.top    > rb.bottom - 20
+                );
+            }
+
+            (function mover() {
+                if (bossHealth <= 0) { p.remove(); return; }
+                if (jogoPausado)     { requestAnimationFrame(mover); return; }
+
+                x += v;
+                p.style.left = x + 'px';
+
+                if (detectarColisao(p, bossImg)) {
+                    p.remove();
+                    bossHealth--;
+                    atualizarBossHp();
+                    return;
+                }
+
+                if (x < -size * 2 || x > window.innerWidth + size * 2) { p.remove(); return; }
+                requestAnimationFrame(mover);
+            })();
+
+            projetisAtivos.push(p);
+        }
+
+        // ===== PROJÉTEIS CAINDO (fase de fogo) =====
+
+        function spawnFallingFireball() {
+            if (jogoPausado || bossHealth <= 0) return;
+
+            const p        = document.createElement('img');
+            p.src          = 'imagens/z5qetmjz7oae1.gif';
+            p.classList.add('projetil');
+            p.style.position = 'absolute';
+            p.style.width  = '80px';
+            p.style.height = '100px';
+
+            const x = Math.random() * (window.innerWidth - 80);
+            p.style.left = x + 'px';
+            p.style.top  = '0px';
+            document.body.appendChild(p);
+
+            (function cair() {
+                if (jogoPausado || bossHealth <= 0) { p.remove(); return; }
+
+                const rectP = p.getBoundingClientRect();
+                if (!mortoVermelho && !imuneVermelho && checarSobreposicao(rectP, magoVermelho.getBoundingClientRect())) {
+                    perderVida();
+                    p.remove();
+                    return;
+                }
+
+                let y = parseFloat(p.style.top) + 5;
+                if (y >= window.innerHeight - 96) { p.remove(); return; }
+
+                p.style.top = y + 'px';
+                requestAnimationFrame(cair);
+            })();
+        }
+
+        // ===== FASE DA LAGOSTA =====
+
+        function spawnCenoura() {
+
+            const rectBoss  = bossImg.getBoundingClientRect();
+            const cenW      = 90;
+            const leftLimit = 0;
+            const rightLimit = rectBoss.left - cenW - 10;
+
+            clearInterval(bossAttackInterval);
+            clearInterval(fireballInterval);
+
+            fireballInterval = setInterval(spawnFallingFireball, 150);
+
+            function criarUmaCenoura(direcaoInicial) {
+
+                const cen      = document.createElement('img');
+                cen.src        = direcaoInicial === 1 ? 'imagens/lagosta-d.gif' : 'imagens/lagosta-e.gif';
+                cen.classList.add('projetil');
+                cen.style.width  = cenW + 'px';
+                cen.style.height = '123px';
+                cen.style.left   = rightLimit + 'px';
+                cen.style.bottom = (chao + 3) + 'px';
+                document.body.appendChild(cen);
+
+                let dir       = direcaoInicial;
+                let velX      = cenouraVel;
+                let y         = chao + 1;
+                let vyC       = 8;
+                const gravC   = 0.35;
+                const forcaC  = 1;
+                let ultimoPulo = performance.now();
+
+                (function mover() {
+
+                    if (jogoPausado || bossHealth <= 0) { requestAnimationFrame(mover); return; }
+
+                    let x   = parseFloat(cen.style.left);
+                    x      += velX * dir;
+
+                    let virou = false;
+
+                    if (x <= leftLimit)  { x = leftLimit;  dir =  1; virou = true; }
+                    else if (x >= rightLimit) { x = rightLimit; dir = -1; virou = true; }
+
+                    cen.style.left = x + 'px';
+                    if (virou) cen.src = dir === 1 ? 'imagens/lagosta-d.gif' : 'imagens/lagosta-e.gif';
+
+                    const agora = performance.now();
+                    if (y <= chao + 3 && agora - ultimoPulo > 1200) { vyC = forcaC; ultimoPulo = agora; }
+
+                    vyC -= gravC;
+                    y   += vyC;
+                    if (y <= chao + 3) { y = chao + 3; vyC = 0; }
+
+                    cen.style.bottom = y + 'px';
+
+                    if (!mortoVermelho && checarSobreposicao(cen.getBoundingClientRect(), magoVermelho.getBoundingClientRect())) {
+                        perderVida();
+                        cen.remove();
+                        return;
+                    }
+
+                    requestAnimationFrame(mover);
+                })();
+            }
+
+            criarUmaCenoura(-1);
+            setTimeout(() => { if (bossHealth > 0) criarUmaCenoura(1); }, 2500);
+        }
+
+        // ===== LOOP PRINCIPAL =====
+
+        const fireCooldown = 150;
+        let lastFireRed    = 0;
+
+        function andar(tempo = 0) {
+            if (jogoPausado || bossHealth <= 0) return;
+
+            if (teclas.KeyD) { posX += vel; ultimaDirVermelho = 'dir'; }
+            if (teclas.KeyA) { posX -= vel; ultimaDirVermelho = 'esq'; }
+            if (teclas.KeyW && !pulando) { vy = forca; pulando = true; }
+
+            vy   -= grav;
+            posY += vy;
+            if (posY <= chao) { posY = chao; vy = 0; pulando = false; }
+
+            posX = Math.max(0, Math.min(posX, window.innerWidth - 535));
+
+            const now = performance.now();
+            if (!mortoVermelho && teclas.KeyF && now - lastFireRed > fireCooldown) {
+                lastFireRed = now;
+                atacarVermelho();
+                criarProjetil(
+                    ultimaDirVermelho === 'esq' ? posX - 40 : posX + 60,
+                    posY + 20,
+                    ultimaDirVermelho === 'esq' ? -1 : 1,
+                    'imagens/Pixel de gelo.gif',
+                    50
+                );
+            }
+
+            // Atualiza sprite de movimento
+            const movendo = teclas.KeyA || teclas.KeyD;
+            let srcV = movendo
+                ? (ultimaDirVermelho === 'esq' ? 'imagens/Mago-azul-correndo-esquerdo.gif' : 'imagens/Mago-azul-correndo.gif')
+                : (ultimaDirVermelho === 'esq' ? 'imagens/Mago-azul-parado-esquerdo.gif'   : 'imagens/Mago-azul-parado.gif');
+
+            if (!atacandoVermelho && imgVermelho.src.indexOf(srcV) < 0) imgVermelho.src = srcV;
+
+            // Boss se move até a posição alvo
+            if (bossX > targetBossX) bossX -= bossSpeed;
+            boss.style.left   = bossX + 'px';
+            boss.style.bottom = bossY + 'px';
+
+            if (bossX <= targetBossX && !bossAttackInterval && !mortoVermelho && bossHealth > 0) {
+                bossAttackInterval = setInterval(criarProjetilBoss, 400);
+            }
+
+            magoVermelho.style.left   = posX + 'px';
+            magoVermelho.style.bottom = posY + 'px';
+
+            // Imunidade temporária após dano
+            if (imuneVermelho && now - tempoImuneVermelho >= 2000) {
+                imuneVermelho = false;
+                magoVermelho.classList.remove('imune');
+            }
+
+            // Cabeça acompanha direção do mago
+            cabecaContainer.style.left      = ultimaDirVermelho === 'esq' ? cabecaAleatoria.leftEsq : cabecaAleatoria.leftDir;
+            cabecaContainer.style.transform = ultimaDirVermelho === 'esq'
+                ? (cabecaAleatoria.espelhar ? 'scaleX(1)'  : 'scaleX(-1)')
+                : (cabecaAleatoria.espelhar ? 'scaleX(-1)' : 'scaleX(1)');
+
+            checarColisao();
+
+            requestAnimationFrame(andar);
+        }
+
+        function atacarVermelho() {
+            atacandoVermelho = true;
+            imgVermelho.src  = ultimaDirVermelho === 'esq'
+                ? 'imagens/Mago-azul-atacando-esquerda.gif'
+                : 'imagens/Mago-azul-atacando.gif';
+            setTimeout(() => { atacandoVermelho = false; }, attackDuration);
+        }
+
+        // ===== BOTÕES DE REINÍCIO / CONTINUAR =====
+
+        document.getElementById('restart-button').addEventListener('click', () => location.reload());
+        document.getElementById('continue-button').addEventListener('click', () => location.reload());
+
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('game-over-overlay').style.display === 'flex'
+                && (e.code === 'Enter' || e.code === 'Space')) {
+                location.reload();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('victory-overlay').classList.contains('show')
+                && podeContinuarVictory
+                && (e.code === 'Enter' || e.code === 'Space')) {
+                e.preventDefault();
+                document.getElementById('continue-button').click();
+            }
+        });
+
+        // ===== INICIALIZAÇÃO DA CABEÇA NO JOGO =====
+
+        cabecaImg.src                      = cabecaAleatoria.src;
+        cabecaImg.style.width              = cabecaAleatoria.width;
+        cabecaImg.style.height             = cabecaAleatoria.height;
+        cabecaImg.style.objectPosition     = cabecaAleatoria.objectPosition;
+
+        cabecaContainer.style.top          = cabecaAleatoria.top;
+        cabecaContainer.style.left         = cabecaAleatoria.left;
+        cabecaContainer.style.width        = cabecaAleatoria.width;
+        cabecaContainer.style.height       = cabecaAleatoria.height;
+        cabecaContainer.style.borderRadius = cabecaAleatoria.borderRadius;
+
+        // Posição inicial dos personagens (antes da cutscene)
+        magoVermelho.style.left   = posX + 'px';
+        magoVermelho.style.bottom = posY + 'px';
+        bossX                     = targetBossX;
+        boss.style.left           = bossX + 'px';
+        boss.style.bottom         = bossY + 'px';
+
+        atualizarBossHp();
+
+    </script>
+</body>
+</html>
