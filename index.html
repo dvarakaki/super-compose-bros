@@ -802,7 +802,7 @@
     <!-- ===== TELA INICIAL ===== -->
     <div id="start-screen">
 
-        <img src="imagens/fundoSalvar.png" id="menu-bg">
+        <img src="web/assets/images/fundoSalvar.png" id="menu-bg">
 
         <div id="start-box">
 
@@ -846,20 +846,20 @@
         <div class="speech-bubble bubble-boss" id="cutscene-bubble-boss">Eu estou aqui!!! HAHAHAHAHA</div>
 
         <div id="cutscene-mago">
-            <img src="imagens/Mago-azul-correndo.gif" class="sprite" id="cutscene-mago-sprite">
+            <img src="web/assets/images/Mago-azul-correndo.gif" class="sprite" id="cutscene-mago-sprite">
             <div class="cabeca-cut">
                 <img id="cutscene-cabeca-img" src="">
             </div>
         </div>
 
         <div id="cutscene-boss" style="opacity:0;">
-            <img src="imagens/monster.gif" alt="Boss">
+            <img src="web/assets/images/monster.gif" alt="Boss">
         </div>
 
     </div>
 
     <!-- ===== CENÁRIO (fundo de jogo) ===== -->
-    <img src="imagens/fundoSalvar.png" id="cenario">
+    <img src="web/assets/images/fundoSalvar.png" id="cenario">
 
     <!-- ===== HUD ===== -->
     <div id="boss-hp-bar">
@@ -870,22 +870,22 @@
 
     <div class="painel-vidas" id="painel-vermelho">
         <div id="vidas-vermelho">
-            <img src="imagens/Coraçao vermelho pegar png.png">
-            <img src="imagens/Coraçao vermelho pegar png.png">
-            <img src="imagens/Coraçao vermelho pegar png.png">
+            <img src="web/assets/images/Coraçao vermelho pegar png.png">
+            <img src="web/assets/images/Coraçao vermelho pegar png.png">
+            <img src="web/assets/images/Coraçao vermelho pegar png.png">
         </div>
     </div>
 
     <!-- ===== PERSONAGENS ===== -->
     <div id="p1">
-        <img src="imagens/Mago-azul-parado.gif" id="magoVermelho">
+        <img src="web/assets/images/Mago-azul-parado.gif" id="magoVermelho">
         <div id="cabeca-container">
             <img id="cabeca-personagem" src="">
         </div>
     </div>
 
     <div id="boss">
-        <img src="imagens/monster.gif" id="bossImg" alt="Boss">
+        <img src="web/assets/images/monster.gif" id="bossImg" alt="Boss">
     </div>
 
     <!-- ===== OVERLAYS ===== -->
@@ -901,12 +901,12 @@
 
     <!-- Boss derrotado (knockout) -->
     <div id="boss-dead-overlay">
-        <img src="imagens/Cuphead_Knockout.png" alt="Boss Derrotado">
+        <img src="web/assets/images/Cuphead_Knockout.png" alt="Boss Derrotado">
     </div>
 
     <!-- Game Over -->
     <div id="game-over-overlay">
-        <img src="imagens/game-over.png" alt="Game Over">
+        <img src="web/assets/images/game-over.png" alt="Game Over">
         <button id="restart-button">Tentar Novamente</button>
     </div>
 
@@ -914,7 +914,7 @@
     <div id="victory-overlay">
         <div id="victory-box">
             <h1>Você conseguiu salvar o Carlinhos!!!</h1>
-            <img src="imagens/carlinhos.png" alt="Vitória">
+            <img src="web/assets/images/carlinhos.png" alt="Vitória">
             <button id="continue-button">Continuar</button>
         </div>
     </div>
@@ -926,35 +926,35 @@
 
         const cabecas = [
             {
-                src: 'imagens/igor-careca2.png',
+                src: 'web/assets/images/igor-careca2.png',
                 top: '-23px', leftEsq: '-7px', leftDir: '-2.5px',
                 width: '110px', height: '130px',
                 objectPosition: 'center', borderRadius: '50%',
                 espelhar: true
             },
             {
-                src: 'imagens/souza-careca3.png',
+                src: 'web/assets/images/souza-careca3.png',
                 top: '-26px', leftEsq: '-6px', leftDir: '-3px',
                 width: '110px', height: '120px',
                 objectPosition: 'center', borderRadius: '50%',
                 espelhar: true
             },
             {
-                src: 'imagens/edu-carega2.png',
+                src: 'web/assets/images/edu-carega2.png',
                 top: '-21px', leftEsq: '7px', leftDir: '8px',
                 width: '87px', height: '110px',
                 objectPosition: 'center', borderRadius: '50%',
                 espelhar: true
             },
             {
-                src: 'imagens/rafa-careca1.png',
+                src: 'web/assets/images/rafa-careca1.png',
                 top: '-18px', leftEsq: '7.5px', leftDir: '11px',
                 width: '82px', height: '100px',
                 objectPosition: 'center', borderRadius: '50%',
                 espelhar: true
             },
             {
-                src: 'imagens/arakaki-careca1.png',
+                src: 'web/assets/images/arakaki-careca1.png',
                 top: '-19px', leftEsq: '5px', leftDir: '5.5px',
                 width: '92px', height: '120px',
                 objectPosition: 'center', borderRadius: '50%',
@@ -1012,7 +1012,7 @@
         let vidasVermelho  = 3;
         let mortoVermelho  = false;
 
-        const bossProjetilSrc = 'imagens/bouncy_ball.gif.jpg';
+        const bossProjetilSrc = 'web/assets/images/bouncy_ball.gif.jpg';
         let bossAttackInterval;
 
         // ===== FÍSICA / POSICIONAMENTO =====
@@ -1101,7 +1101,7 @@
             cutsceneMago.style.left       = '-300px';
             cutsceneMago.style.bottom     = chaoBottom + 'px';
             cutsceneMago.style.transition = 'none';
-            cutsceneMagoSprite.src        = 'imagens/Mago-azul-parado.gif';
+            cutsceneMagoSprite.src        = 'web/assets/images/Mago-azul-parado.gif';
 
             setTimeout(() => {
                 cutsceneMago.style.transition = 'left 1.8s cubic-bezier(.17,.89,.32,1.28)';
@@ -1111,7 +1111,7 @@
             // Fase 2 — Mago anda para a direita e volta
             setTimeout(() => {
 
-                cutsceneMagoSprite.src            = 'imagens/Mago-azul-correndo.gif';
+                cutsceneMagoSprite.src            = 'web/assets/images/Mago-azul-correndo.gif';
                 cabecaContCut.style.left          = cabecaAleatoria.leftDir;
                 cabecaContCut.style.transform     = cabecaAleatoria.espelhar ? 'scaleX(-1)' : 'scaleX(1)';
 
@@ -1124,7 +1124,7 @@
                 // Volta para a esquerda
                 setTimeout(() => {
 
-                    cutsceneMagoSprite.src        = 'imagens/Mago-azul-correndo-esquerdo.gif';
+                    cutsceneMagoSprite.src        = 'web/assets/images/Mago-azul-correndo-esquerdo.gif';
                     cabecaContCut.style.left      = cabecaAleatoria.leftEsq;
                     cabecaContCut.style.transform = cabecaAleatoria.espelhar ? 'scaleX(1)' : 'scaleX(-1)';
 
@@ -1134,7 +1134,7 @@
                     setTimeout(() => {
 
                         // Para, olha para a direita
-                        cutsceneMagoSprite.src        = 'imagens/Mago-azul-parado.gif';
+                        cutsceneMagoSprite.src        = 'web/assets/images/Mago-azul-parado.gif';
                         cabecaContCut.style.left      = cabecaAleatoria.leftDir;
                         cabecaContCut.style.transform = cabecaAleatoria.espelhar ? 'scaleX(-1)' : 'scaleX(1)';
 
@@ -1373,7 +1373,7 @@
         function spawnGhost(magoElem, ultimaDir) {
             const rect  = magoElem.getBoundingClientRect();
             const ghost = document.createElement('img');
-            ghost.src   = 'imagens/c438037dec8de2accd9a77cb49bd11bd.gif';
+            ghost.src   = 'web/assets/images/c438037dec8de2accd9a77cb49bd11bd.gif';
             ghost.classList.add('ghost');
             ghost.style.animationName = (ultimaDir === 'esq') ? 'ghost-left' : 'ghost-right';
             ghost.style.left   = rect.left + 'px';
@@ -1413,7 +1413,7 @@
             document.querySelectorAll('.projetil').forEach(p => p.remove());
             projetisAtivos = [];
 
-            bossImg.src = 'imagens/monster-derrotado.png';
+            bossImg.src = 'web/assets/images/monster-derrotado.png';
             boss.classList.add('boss-dead');
             overlay.style.display = 'flex';
 
@@ -1421,7 +1421,7 @@
             document.removeEventListener('keydown', onKeyDown);
             document.removeEventListener('keyup', onKeyUp);
 
-            imgVermelho.src = 'imagens/Mago-azul-parado.gif';
+            imgVermelho.src = 'web/assets/images/Mago-azul-parado.gif';
 
             setTimeout(() => {
 
@@ -1546,7 +1546,7 @@
             if (jogoPausado || bossHealth <= 0) return;
 
             const p        = document.createElement('img');
-            p.src          = 'imagens/z5qetmjz7oae1.gif';
+            p.src          = 'web/assets/images/z5qetmjz7oae1.gif';
             p.classList.add('projetil');
             p.style.position = 'absolute';
             p.style.width  = '80px';
@@ -1592,7 +1592,7 @@
             function criarUmaCenoura(direcaoInicial) {
 
                 const cen      = document.createElement('img');
-                cen.src        = direcaoInicial === 1 ? 'imagens/lagosta-d.gif' : 'imagens/lagosta-e.gif';
+                cen.src        = direcaoInicial === 1 ? 'web/assets/images/lagosta-d.gif' : 'web/assets/images/lagosta-e.gif';
                 cen.classList.add('projetil');
                 cen.style.width  = cenW + 'px';
                 cen.style.height = '123px';
@@ -1621,7 +1621,7 @@
                     else if (x >= rightLimit) { x = rightLimit; dir = -1; virou = true; }
 
                     cen.style.left = x + 'px';
-                    if (virou) cen.src = dir === 1 ? 'imagens/lagosta-d.gif' : 'imagens/lagosta-e.gif';
+                    if (virou) cen.src = dir === 1 ? 'web/assets/images/lagosta-d.gif' : 'web/assets/images/lagosta-e.gif';
 
                     const agora = performance.now();
                     if (y <= chao + 3 && agora - ultimoPulo > 1200) { vyC = forcaC; ultimoPulo = agora; }
@@ -1672,7 +1672,7 @@
                     ultimaDirVermelho === 'esq' ? posX - 40 : posX + 60,
                     posY + 20,
                     ultimaDirVermelho === 'esq' ? -1 : 1,
-                    'imagens/Pixel de gelo.gif',
+                    'web/assets/images/Pixel de gelo.gif',
                     50
                 );
             }
@@ -1680,8 +1680,8 @@
             // Atualiza sprite de movimento
             const movendo = teclas.KeyA || teclas.KeyD;
             let srcV = movendo
-                ? (ultimaDirVermelho === 'esq' ? 'imagens/Mago-azul-correndo-esquerdo.gif' : 'imagens/Mago-azul-correndo.gif')
-                : (ultimaDirVermelho === 'esq' ? 'imagens/Mago-azul-parado-esquerdo.gif'   : 'imagens/Mago-azul-parado.gif');
+                ? (ultimaDirVermelho === 'esq' ? 'web/assets/images/Mago-azul-correndo-esquerdo.gif' : 'web/assets/images/Mago-azul-correndo.gif')
+                : (ultimaDirVermelho === 'esq' ? 'web/assets/images/Mago-azul-parado-esquerdo.gif'   : 'web/assets/images/Mago-azul-parado.gif');
 
             if (!atacandoVermelho && imgVermelho.src.indexOf(srcV) < 0) imgVermelho.src = srcV;
 
@@ -1717,8 +1717,8 @@
         function atacarVermelho() {
             atacandoVermelho = true;
             imgVermelho.src  = ultimaDirVermelho === 'esq'
-                ? 'imagens/Mago-azul-atacando-esquerda.gif'
-                : 'imagens/Mago-azul-atacando.gif';
+                ? 'web/assets/images/Mago-azul-atacando-esquerda.gif'
+                : 'web/assets/images/Mago-azul-atacando.gif';
             setTimeout(() => { atacandoVermelho = false; }, attackDuration);
         }
 
