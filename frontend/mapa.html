@@ -1,0 +1,2591 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <link rel="icon" type="image/gif" href="assets/images/boss-final.gif">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <title>Docker Compose</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    img {
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: black;
+      font-family: 'Press Start 2P', monospace;
+    }
+
+    /* =========================================================
+       SCANLINES — sobrepõe tudo
+    ========================================================= */
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      background: repeating-linear-gradient(to bottom,
+          rgba(255, 255, 255, .025),
+          rgba(255, 255, 255, .025) 1px,
+          transparent 1px,
+          transparent 4px);
+    }
+
+    /* =========================================================
+       FLASH OVERLAY — usado na transição RE4
+    ========================================================= */
+    .flash-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      background: white;
+    }
+
+    .flash-overlay.active {
+      animation: flashAnim 1.1s ease-out forwards;
+    }
+
+    /* flash colorido da rachadura (usada ao final do vídeo do polvo) */
+    .crack-flash {
+      position: fixed;
+      inset: 0;
+      z-index: 280;
+      pointer-events: none;
+      opacity: 0;
+      background: rgba(168, 126, 255, 0.95);
+      /* cor aproximada da rachadura */
+      transition: opacity .45s ease;
+    }
+
+    .crack-flash.active {
+      opacity: 1;
+    }
+
+    @keyframes flashAnim {
+      0% {
+        opacity: 1;
+      }
+
+      65% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0;
+      }
+    }
+
+    /* =========================================================
+       TELA 1 — INTRO (portaInicio.png + diálogo estilo RPG)
+    ========================================================= */
+    #introScreen {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding-bottom: 40px;
+      background: url('assets/images/portaInicio.png') center center / cover no-repeat;
+      image-rendering: pixelated;
+      transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+        filter 0.9s ease,
+        opacity 0.4s ease;
+    }
+
+    #introScreen.zoom-in {
+      transform: scale(1.45);
+      filter: brightness(2.2);
+    }
+
+    #introScreen.hidden {
+      display: none;
+    }
+
+    /* escurecimento leve sobre a imagem */
+    #introScreen::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, .38);
+      pointer-events: none;
+    }
+
+    /* caixa de diálogo estilo RPG pixel */
+    .dialogue-box {
+      position: relative;
+      z-index: 2;
+      width: 820px;
+      max-width: 92%;
+      margin: 0 auto;
+      background: rgba(0, 0, 0, .92);
+      border: 4px solid #fff;
+      box-shadow:
+        0 0 0 2px #000,
+        0 0 30px rgba(180, 120, 255, .35);
+      padding: 28px 32px;
+      display: flex;
+      gap: 28px;
+      align-items: flex-start;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity .5s ease, transform .5s ease;
+    }
+
+    .dialogue-box.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* retrato da baleia */
+    .portrait {
+      width: 130px;
+      flex-shrink: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .portrait img {
+      width: 100%;
+      image-rendering: pixelated;
+      animation: float 2.2s ease-in-out infinite;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-6px);
+      }
+    }
+
+    /* texto do diálogo */
+    .dialogue-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* prompt de nome */
+    #namePrompt {
+      display: none;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .name-input {
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 2px solid rgba(255, 255, 255, .08);
+      background: rgba(255, 255, 255, .04);
+      color: #f0eaff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 11px;
+      outline: none;
+      width: 260px;
+    }
+
+    .name-submit {
+      padding: 10px 14px;
+      border: 2px solid #a87eff;
+      background: rgba(168, 126, 255, .08);
+      color: #a87eff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .dialogue-name {
+      color: #a87eff;
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-shadow: 0 0 10px rgba(168, 126, 255, .6);
+    }
+
+    .dialogue-text {
+      color: #f0eaff;
+      font-size: 13px;
+      line-height: 2;
+      min-height: 52px;
+    }
+
+    /* cursor piscante no fim do texto */
+    .dialogue-cursor {
+      display: inline-block;
+      width: 10px;
+      height: 14px;
+      background: #f0eaff;
+      margin-left: 3px;
+      vertical-align: middle;
+      animation: blink .7s step-end infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0;
+      }
+    }
+
+    /* botões Sim / Não */
+    .dialogue-actions {
+      display: flex;
+      gap: 20px;
+      margin-top: 6px;
+    }
+
+    .door-button {
+      padding: 12px 28px;
+      border: 3px solid #fff;
+      background: rgba(0, 0, 0, .8);
+      color: #fff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+      letter-spacing: 2px;
+    }
+
+    .door-button:hover {
+      background: rgba(255, 255, 255, .12);
+      transform: translateY(-2px);
+    }
+
+    .door-button:active {
+      transform: translateY(1px);
+    }
+
+    .door-button.confirm {
+      border-color: #a87eff;
+      color: #a87eff;
+      box-shadow: 0 0 12px rgba(168, 126, 255, .4);
+    }
+
+    .door-button.confirm:hover {
+      background: rgba(168, 126, 255, .15);
+    }
+
+    /* seta "pressione Enter" */
+    .dialogue-hint {
+      align-self: flex-end;
+      font-size: 9px;
+      color: rgba(255, 255, 255, .4);
+      letter-spacing: 1px;
+      animation: bob .9s ease-in-out infinite;
+    }
+
+    @keyframes bob {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(4px);
+      }
+    }
+
+    /* =========================================================
+       TELA 2 — MENU PRINCIPAL (vídeo + título + botão START)
+    ========================================================= */
+    #mainScreen {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: none;
+    }
+
+    #mainScreen.visible {
+      display: block;
+    }
+
+    /* vídeo de fundo */
+    #mainVideo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    /* overlay escuro sobre o vídeo */
+    .main-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, .4);
+      z-index: 1;
+    }
+
+    .main-overlay.active {
+      animation: darken .6s ease-out forwards;
+    }
+
+    @keyframes darken {
+      to {
+        background: rgba(0, 0, 0, .85);
+      }
+    }
+
+    /* conteúdo central */
+    .main-content {
+      position: relative;
+      z-index: 3;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 120px;
+      animation: fadeUp .8s ease-out;
+    }
+
+    .main-content.active {
+      animation: zoomOut .7s cubic-bezier(.25, .46, .45, .94) forwards;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes zoomOut {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.1);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(2.5);
+        opacity: 0;
+      }
+    }
+
+    /* caixa do título */
+    .title-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 28px 50px;
+      margin-bottom: 42px;
+      background: rgba(10, 8, 18, .6);
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 22px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 20px 55px rgba(0, 0, 0, .4);
+    }
+
+    .title-box h1 {
+      color: white;
+      font-size: 96px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      line-height: 1;
+      font-family: 'Arial Black', Arial, sans-serif;
+      text-shadow:
+        0 0 18px rgba(255, 255, 255, .7),
+        0 0 30px rgba(157, 95, 255, .35);
+    }
+
+    .title-box h2 {
+      color: #c08bff;
+      font-size: 26px;
+      font-weight: 800;
+      margin-top: 10px;
+      letter-spacing: 7px;
+      text-shadow: 0 0 12px rgba(157, 95, 255, .7);
+      font-family: Arial, sans-serif;
+    }
+
+    .title-box h2::before {
+      content: '·· ';
+      color: #7a3fcc;
+    }
+
+    .title-box h2::after {
+      content: ' ··';
+      color: #7a3fcc;
+    }
+
+    /* botão START */
+    .start-btn {
+      width: 360px;
+      height: 96px;
+      border: 5px solid #361f83;
+      border-radius: 18px;
+      font-size: 34px;
+      font-weight: 900;
+      color: white;
+      font-family: 'Arial Black', Arial, sans-serif;
+      background: linear-gradient(180deg, #8f4dff 0%, #5a26b8 36%, #2b0f58 100%);
+      cursor: pointer;
+      letter-spacing: 3px;
+      text-shadow: 0 3px 5px rgba(0, 0, 0, .55);
+      box-shadow:
+        0 14px 0 #190639,
+        0 24px 42px rgba(0, 0, 0, .45),
+        inset 0 2px 3px rgba(255, 255, 255, .16),
+        inset 0 -10px 28px rgba(0, 0, 0, .45);
+      transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .start-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0) 40%);
+      pointer-events: none;
+    }
+
+    .start-btn:hover {
+      transform: translateY(-3px);
+      filter: brightness(1.12);
+      box-shadow:
+        0 18px 0 #190639,
+        0 32px 45px rgba(0, 0, 0, .55),
+        inset 0 3px 4px rgba(255, 255, 255, .2);
+    }
+
+    .start-btn:active {
+      transform: translateY(2px);
+      box-shadow:
+        0 8px 0 #190639,
+        0 14px 22px rgba(0, 0, 0, .28),
+        inset 0 1px 2px rgba(255, 255, 255, .1);
+    }
+
+    /* vídeos de transição (bubbles etc) */
+    #bubbleVideo {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 50;
+      display: none;
+    }
+
+    /* overlay de "câmera" que desce mostrando a imagem de fundo inicial */
+    .camera-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      pointer-events: none;
+      background: url('assets/images/fundoInicial.png') center center / cover no-repeat;
+      transform: translateY(-100%);
+      opacity: 0;
+      transition: transform 1.1s cubic-bezier(.22, .9, .28, 1), opacity 1.1s ease;
+    }
+
+    .camera-overlay.active {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* peixes animados sobre o fundo inicial */
+    #peixesFases {
+      position: fixed;
+      inset: 0;
+      z-index: 61;
+      pointer-events: none;
+      display: none;
+    }
+
+    #peixesFases.visible {
+      display: block;
+      /* permitir clique nos peixes quando visível */
+      pointer-events: auto;
+    }
+
+    #peixesFases>div {
+      position: absolute;
+      width: 150px;
+      height: 120px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      transform-origin: center;
+      pointer-events: auto;
+    }
+
+    /* portal (entrada das fases) */
+    #peixesFases>div.portal {
+      width: 180px;
+      height: 180px;
+      left: 85%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background-image: url('assets/images/portal.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      animation: pulsePortal 2.2s ease-in-out infinite;
+      cursor: pointer;
+      filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.45));
+    }
+
+    @keyframes pulsePortal {
+      0% {
+        transform: translate(-50%, -50%) scale(1);
+      }
+
+      50% {
+        transform: translate(-50%, -50%) scale(1.06);
+      }
+
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    @keyframes peixeBob {
+      0% {
+        transform: translateY(0) rotate(-2deg);
+      }
+
+      50% {
+        transform: translateY(-18px) rotate(2deg);
+      }
+
+      100% {
+        transform: translateY(0) rotate(-2deg);
+      }
+    }
+
+    /* posições e imagens individuais */
+    #peixesFases>div:nth-child(1) {
+      left: 6%;
+      top: 20%;
+      background-image: url("assets/images/edu.png");
+      animation: peixeBob 3.6s ease-in-out infinite;
+    }
+
+    #peixesFases>div:nth-child(2) {
+      width: 180px;
+      height: 150px;
+      left: 14%;
+      top: 66%;
+      transform: scale(.9);
+      background-image: url("assets/images/felipe.png");
+      animation: peixeBob 4.4s ease-in-out infinite .2s;
+    }
+
+    #peixesFases>div:nth-child(3) {
+      left: 30%;
+      top: 20%;
+      transform: scale(.85) rotateY(180deg);
+      background-image: url("assets/images/arakaki.png");
+      animation: peixeBob 3.2s ease-in-out infinite .5s;
+    }
+
+    #peixesFases>div:nth-child(4) {
+      left: 39%;
+      top: 66%;
+      transform: scale(.95);
+      background-image: url("assets/images/igor.png");
+      animation: peixeBob 4.8s ease-in-out infinite .1s;
+    }
+
+    #peixesFases>div:nth-child(5) {
+      width: 130px;
+      height: 110px;
+      left: 50%;
+      top: 20%;
+      transform: scale(.8) rotateY(180deg);
+      background-image: url("assets/images/gustavo.png");
+      animation: peixeBob 3.8s ease-in-out infinite .35s;
+    }
+
+    #peixesFases>div:nth-child(6) {
+      left: 66%;
+      top: 66%;
+      transform: scale(.95) rotateY(180deg);
+      background-image: url("assets/images/Rafa.png");
+      animation: peixeBob 4.2s ease-in-out infinite .6s;
+    }
+
+    /* =========================================================
+       BARCO E SISTEMA DE FASES
+    ========================================================= */
+    #boatContainer {
+      position: fixed;
+      inset: 0;
+      z-index: 62;
+      pointer-events: none;
+      display: none;
+    }
+
+    #boatContainer.visible {
+      display: block;
+      pointer-events: auto;
+    }
+
+    /* o barco */
+    #boat {
+      position: absolute;
+      width: 150px;
+      height: 100px;
+      background: url('assets/images/barcoFases.png') center / contain no-repeat;
+      image-rendering: pixelated;
+      bottom: 15%;
+      left: -250px;
+      /* permitir transição de left e bottom para movimento diagonal (mais lenta) */
+      transition: left 1.9s cubic-bezier(0.34, 1.56, 0.64, 1), bottom 1.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+      filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+      z-index: 1;
+    }
+
+    /* bolhas atrás do barco */
+    .boat-bubbles {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .bubble {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 50%;
+      animation: bubblesFloat 1.5s ease-in infinite;
+      left: -20px;
+    }
+
+    @keyframes bubblesFloat {
+      0% {
+        transform: translateY(0) translateX(0);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(-80px) translateX(-30px);
+        opacity: 0;
+      }
+    }
+
+    .bubble:nth-child(1) {
+      bottom: 30px;
+      animation-delay: 0s;
+    }
+
+    .bubble:nth-child(2) {
+      bottom: 50px;
+      animation-delay: 0.3s;
+    }
+
+    .bubble:nth-child(3) {
+      bottom: 70px;
+      animation-delay: 0.6s;
+    }
+
+    .bubble:nth-child(4) {
+      bottom: 40px;
+      animation-delay: 0.15s;
+    }
+
+    .bubble:nth-child(5) {
+      bottom: 60px;
+      animation-delay: 0.45s;
+    }
+
+    /* indicador de fase selecionada */
+    .phase-indicator {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border: 3px solid #a87eff;
+      border-radius: 50%;
+      background: rgba(168, 126, 255, 0.15);
+      display: none;
+      z-index: 10;
+    }
+
+    #peixesFases>div.selected {
+      filter: brightness(1.5) drop-shadow(0 0 15px rgba(168, 126, 255, 0.8));
+    }
+
+    #peixesFases>div.phase-clickable {
+      cursor: pointer;
+    }
+
+    #peixesFases>div.phase-clickable:hover {
+      filter: brightness(1.2);
+    }
+
+    #peixesFases>div.phase-locked {
+      cursor: not-allowed;
+      filter: grayscale(1) brightness(0.42);
+      opacity: 0.55;
+    }
+
+    #peixesFases>div.phase-locked:hover {
+      filter: grayscale(1) brightness(0.42);
+    }
+
+    @media (max-width: 768px) {
+      .title-box h1 {
+        font-size: 56px;
+      }
+
+      .title-box h2 {
+        font-size: 20px;
+      }
+
+      .start-btn {
+        width: 260px;
+        height: 72px;
+        font-size: 24px;
+      }
+
+      .main-content {
+        padding-top: 80px;
+      }
+
+      .dialogue-box {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .portrait {
+        width: 90px;
+      }
+
+      .dialogue-text {
+        font-size: 11px;
+      }
+    }
+
+    /* =========================================================
+       STYLES: painel de fase 
+    ========================================================= */
+    .phase-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: rgba(0, 0, 0, 0.24);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .35s ease;
+    }
+
+    .phase-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* PAINEL */
+    .phase-overlay .phase-panel {
+      position: fixed;
+
+      right: 0;
+      top: 0;
+      transform: translateX(105%);
+
+      width: min(88vw, 560px);
+      height: 100vh;
+
+      /* MAPA INTEIRO */
+      background:
+        url('assets/images/MapaFases.png') center center / 100% 100% no-repeat;
+
+      border-radius: 24px 0 0 24px;
+
+      /* REMOVE O CORTE */
+      overflow: visible;
+
+      padding: 52px 34px 32px;
+      padding-top: 100px;
+      padding-left: 100px;
+
+      transition:
+        transform .45s cubic-bezier(.22, 1, .36, 1),
+        opacity .35s ease;
+
+      opacity: 0;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 22px;
+    }
+
+    .phase-overlay.active .phase-panel {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+
+    .phase-panel>* {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* CONTEÚDO */
+    .phase-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* TITULO */
+    .phase-overlay .phase-title {
+      font-size: 24px;
+      color: #f6e8c7;
+      margin: 0 56px 4px 0;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      font-weight: 900;
+
+      text-shadow:
+        0 0 12px rgba(255, 224, 163, 0.25),
+        0 2px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    /* MAPA */
+    .phase-map {
+      width: 100%;
+      display: grid;
+
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+
+      justify-items: center;
+
+      margin: 0 0 8px;
+    }
+
+    /* BOTÕES */
+    .phase-map-item {
+      width: 58px;
+      height: 58px;
+      border-radius: 14px;
+
+      background: transparent;
+      border: 2px solid transparent;
+
+      color: #f6e8c7;
+      font-size: 18px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+      text-shadow:
+        0 2px 3px rgba(0, 0, 0, .85),
+        0 0 10px rgba(255, 224, 163, .2);
+    }
+
+    .phase-map-item:hover {
+      transform: scale(1.12);
+
+      background:
+        linear-gradient(180deg,
+          rgba(76, 177, 255, 0.9),
+          rgba(0, 90, 170, 0.9));
+
+      border-color: rgba(173, 230, 255, 0.8);
+
+      box-shadow:
+        0 0 25px rgba(70, 190, 255, 0.45),
+        inset 0 0 12px rgba(255, 255, 255, 0.2);
+    }
+
+    /* FASE ATUAL */
+    .phase-map-item.current {
+      background:
+        linear-gradient(180deg,
+          #ff6b4a,
+          #8f1f12);
+
+      border-color: rgba(255, 210, 190, 0.7);
+
+      box-shadow:
+        0 0 24px rgba(255, 90, 40, 0.45),
+        inset 0 0 14px rgba(255, 255, 255, 0.18);
+    }
+
+    /* COMPLETA */
+    .phase-map-item.completed {
+      background:
+        linear-gradient(180deg,
+          #5ae06f,
+          #1e6d2f);
+
+      border-color: rgba(200, 255, 210, 0.7);
+
+      box-shadow:
+        0 0 20px rgba(74, 255, 122, 0.35);
+    }
+
+    .phase-map-item.locked {
+      cursor: not-allowed;
+      opacity: .45;
+      filter: grayscale(1);
+      background: rgba(20, 20, 20, .22);
+      color: rgba(246, 232, 199, .55);
+      border-color: rgba(20, 20, 20, .34);
+      box-shadow: none;
+    }
+
+    .phase-map-item.locked:hover {
+      transform: none;
+      box-shadow: none;
+      color: rgba(246, 232, 199, .55);
+    }
+
+    /* TEXTO */
+    .phase-body {
+      position: relative;
+      z-index: 2;
+    }
+
+    .phase-nota {
+      font-size: 16px;
+      font-weight: 900;
+      color: #f4e8c5;
+      margin-bottom: 12px;
+
+      text-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.8);
+    }
+
+    .phase-score {
+      font-size: 15px;
+      font-weight: bold;
+      color: #5eff8d;
+      margin-bottom: 18px;
+
+      text-shadow:
+        0 0 10px rgba(94, 255, 141, 0.35);
+    }
+
+    .phase-desc {
+      max-width: 100%;
+      line-height: 1.7;
+
+      color: #f3ead6;
+      font-size: 14px;
+      font-weight: 600;
+
+      text-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.85);
+    }
+
+    /* BOTAO */
+    .phase-start {
+      width: 100%;
+      height: 58px;
+      margin-top: 150px;
+      border: 3px solid rgba(255, 232, 190, .45);
+      border-radius: 14px;
+      background:
+        linear-gradient(180deg,
+          rgba(78, 169, 217, .94),
+          rgba(17, 97, 152, .96));
+      color: #fff7dc;
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      cursor: pointer;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, .7);
+      box-shadow:
+        0 12px 26px rgba(0, 0, 0, .45),
+        inset 0 1px 0 rgba(255, 255, 255, .25);
+    }
+
+    .phase-start:hover {
+      transform: translateY(-4px);
+
+      background:
+        linear-gradient(180deg,
+          #67d2ff,
+          #1478c5);
+
+      box-shadow:
+        0 18px 34px rgba(0, 0, 0, 0.5),
+        0 0 24px rgba(64, 180, 255, 0.35);
+    }
+
+    /* FECHAR */
+    .phase-close {
+      position: absolute;
+      top: 100px;
+      right: 16px;
+
+      width: 42px;
+      height: 42px;
+
+      border-radius: 12px;
+
+      border: 2px solid rgba(255, 213, 193, 0.4);
+
+      background: rgba(0, 0, 0, 0.28);
+
+      color: #ffd7cb;
+
+      font-size: 24px;
+      font-weight: bold;
+
+      cursor: pointer;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      transition: .25s ease;
+
+      z-index: 5;
+    }
+
+    .phase-close:hover {
+      transform: rotate(90deg) scale(1.1);
+
+      background: rgba(255, 80, 50, 0.85);
+
+      color: white;
+
+      box-shadow:
+        0 0 20px rgba(255, 90, 50, 0.4);
+    }
+
+    /* =========================================================
+       TELA DAS FASES COM BARCO
+    ========================================================= */
+    #phaseScreenContainer {
+      position: fixed;
+      inset: 0;
+      z-index: 600;
+      display: none;
+      background-color: #1a2847;
+      overflow: hidden;
+    }
+
+    #phaseScreenContainer.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #phaseExplainer {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(86vw, 900px);
+      aspect-ratio: 900 / 610;
+      background: url('assets/images/LivroSlide.png') center / contain no-repeat;
+      border: 0;
+      border-radius: 0;
+      padding: 0;
+      box-shadow: none;
+      z-index: 100;
+      display: block;
+      overflow: hidden;
+      font-family: Georgia, 'Times New Roman', serif;
+      color: #2d2115;
+      pointer-events: none;
+    }
+
+    .book-slide-content {
+      position: absolute;
+      left: 16%;
+      right: 15%;
+      top: 17%;
+      bottom: 19%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 11%;
+      align-items: start;
+      text-align: left;
+      transition: opacity .35s ease, transform .35s ease;
+    }
+
+    .book-page {
+      min-width: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      padding: 0 6px;
+    }
+
+    .book-page-number {
+      margin: 0 0 16px;
+      font-size: clamp(16px, 1.55vw, 23px);
+      line-height: 1.12;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #5a3218;
+      text-shadow: 0 1px 0 rgba(255, 238, 196, .45);
+    }
+
+    .book-slide-content.fading {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    .book-slide-title {
+      margin: 0;
+      font-size: clamp(14px, 1.35vw, 20px);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #2a1b10;
+      text-shadow: 0 1px 0 rgba(255, 235, 185, .55);
+    }
+
+    .book-slide-image {
+      width: 100%;
+      max-height: 185px;
+      margin-top: 18px;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(45, 25, 10, .28);
+    }
+
+    .book-slide-text {
+      margin: 6px 0 0;
+      font-size: clamp(12px, 1.05vw, 17px);
+      line-height: 1.34;
+      font-weight: 700;
+      color: #3a2a1a;
+      text-shadow: 0 1px 0 rgba(255, 235, 185, .5);
+    }
+
+    .book-slide-text ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .book-slide-text li {
+      margin-bottom: 9px;
+    }
+
+    .book-slide-code {
+      width: 100%;
+      max-height: 185px;
+      margin: 6px 0 10px;
+      padding: 10px 12px;
+      overflow: auto;
+      border-radius: 8px;
+      background: rgba(62, 36, 15, .14);
+      color: #2b1c10;
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: clamp(9px, .78vw, 12px);
+      line-height: 1.25;
+      white-space: pre-wrap;
+      text-shadow: none;
+      box-shadow: inset 0 0 0 1px rgba(75, 45, 18, .18);
+    }
+
+    #phaseControls {
+      position: fixed;
+      left: 55%;
+      top: 57%;
+      transform: translate(-50%, -50%);
+      width: min(86vw, 900px);
+      aspect-ratio: 900 / 610;
+      display: block;
+      z-index: 102;
+      pointer-events: none;
+    }
+
+    .phase-nav-btn {
+      position: absolute;
+      top: 62%;
+      width: 120px;
+      min-height: 72px;
+      padding: 0;
+      background: transparent;
+      color: #050505;
+      border: 0;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1.25;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-radius: 8px;
+      transition: color .12s ease, text-shadow .12s ease, opacity .12s ease;
+      text-shadow: 0 3px 0 rgba(255, 230, 160, .32);
+      box-shadow: none;
+      transform: none;
+      pointer-events: auto;
+      z-index: 3;
+    }
+
+    #phaseBackBtn {
+      left: 9%;
+      text-align: left;
+    }
+
+    #phaseNextBtn {
+      right: 25%;
+      text-align: right;
+    }
+
+    .phase-nav-btn.hovered,
+    .phase-nav-btn:hover {
+      color: #ffd23b;
+      text-shadow:
+        0 0 18px rgba(255, 210, 59, .85),
+        0 0 4px rgba(255, 247, 190, .9),
+        0 3px 0 rgba(0, 0, 0, .55);
+    }
+
+    .phase-nav-btn:active {
+      color: #fff2a1;
+    }
+
+    .phase-nav-btn.is-locked {
+      opacity: 0.35;
+      cursor: default;
+      color: rgba(5, 5, 5, .5);
+      text-shadow: 0 1px 0 rgba(255, 230, 160, .25);
+    }
+
+    .phase-book-flash {
+      position: fixed;
+      inset: 0;
+      z-index: 240;
+      background: #000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .16s ease;
+    }
+
+    .phase-book-flash.active {
+      opacity: 1;
+    }
+
+    .phase-finish-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 260;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, .62);
+      backdrop-filter: blur(4px);
+      pointer-events: auto;
+    }
+
+    .phase-finish-modal.active {
+      display: flex;
+    }
+
+    .phase-finish-card {
+      width: min(88vw, 560px);
+      padding: 34px;
+      border: 3px solid rgba(255, 232, 180, .75);
+      border-radius: 16px;
+      background:
+        linear-gradient(180deg, rgba(59, 34, 16, .96), rgba(24, 14, 8, .96));
+      color: #fff1c2;
+      text-align: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      box-shadow:
+        0 24px 70px rgba(0, 0, 0, .65),
+        inset 0 0 24px rgba(255, 210, 90, .12);
+    }
+
+    .phase-finish-card h2 {
+      margin: 0 0 14px;
+      font-size: 30px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .phase-finish-card p {
+      margin: 0 0 28px;
+      font-size: 18px;
+      line-height: 1.5;
+    }
+
+    .phase-finish-actions {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .phase-finish-actions button {
+      min-width: 180px;
+      padding: 14px 18px;
+      border: 2px solid rgba(255, 232, 180, .72);
+      border-radius: 10px;
+      background: rgba(255, 218, 92, .16);
+      color: #fff1c2;
+      cursor: pointer;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .phase-finish-actions button:hover {
+      background: rgba(255, 218, 92, .32);
+      color: #fff8d8;
+    }
+
+    #boatFases {
+      position: fixed;
+      z-index: 200;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      filter: drop-shadow(0 0 12px #a87eff);
+      transition: filter 0.3s ease;
+      cursor: move;
+      transition:
+        left .08s linear,
+        top .08s linear,
+        filter .25s ease,
+        transform .2s ease;
+    }
+
+    #boatFases:hover {
+      transform: scale(1.08);
+    }
+
+    #boatFases.active {
+      filter: drop-shadow(0 0 30px #ff00ff) drop-shadow(0 0 15px #00ffff);
+    }
+  </style>
+</head>
+
+<body>
+  <div id="peixesFases">
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+    <div class="portal" title="Portal"></div>
+  </div>
+  <!-- barco navegando entre fases -->
+  <div id="boatContainer">
+    <div id="boat">
+      <div class="boat-bubbles">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+      </div>
+    </div>
+  </div>
+  <!-- scanlines sobre tudo -->
+  <div class="scanlines"></div>
+  <!-- flash branco RE4 -->
+  <div class="flash-overlay" id="flashOverlay"></div>
+  <div id="crackFlash" class="crack-flash"></div>
+  <!-- =====================================================
+       TELA 1: INTRO COM PORTA
+  ===================================================== -->
+  <div id="introScreen">
+    <div class="dialogue-box" id="dialogueBox">
+      <!-- retrato baleia -->
+      <div class="portrait">
+        <img src="assets/images/dockerBaleia-removebg-preview.png" alt="Docker Whale">
+      </div>
+      <!-- corpo do diálogo -->
+      <div class="dialogue-body">
+        <div class="dialogue-name">Docker</div>
+        <div id="namePrompt">
+          <input id="nameInput" class="name-input" type="text" maxlength="20" placeholder="Digite seu nome">
+          <button id="nameSubmit" class="name-submit">OK</button>
+        </div>
+        <div class="dialogue-text" id="dialogueText">
+          <span id="dialogueContent"></span><span class="dialogue-cursor" id="dialogueCursor"></span>
+        </div>
+        <!-- botões aparecem só no último diálogo -->
+        <div class="dialogue-actions" id="dialogueActions" style="display:none">
+          <button class="door-button" id="doorYes">▶ Sim</button>
+          <button class="door-button cancel" id="doorNo">✕ Não</button>
+        </div>
+        <div class="dialogue-hint" id="dialogueHint">▼ ENTER para continuar</div>
+      </div>
+    </div>
+  </div>
+  <!-- =====================================================
+       TELA 2: MENU PRINCIPAL
+  ===================================================== -->
+  <div id="mainScreen">
+    <video id="mainVideo" muted loop playsinline preload="auto">
+      <source src="assets/media/background.mp4" type="video/mp4">
+    </video>
+    <div class="main-overlay" id="mainOverlay"></div>
+    <div class="main-content" id="mainContent">
+      <div class="title-box">
+        <h1>Docker</h1>
+        <h2>Compose</h2>
+      </div>
+      <button class="start-btn" id="startBtn">▶ START</button>
+    </div>
+  </div>
+  <!-- vídeo de bolhas após o START -->
+  <video id="bubbleVideo" playsinline>
+    <source src="assets/media/BolhasPassando.mp4" type="video/mp4">
+  </video>
+  <!-- vídeo de entrada que toca antes de abrir a porta -->
+  <video id="entradaVideo" playsinline
+    style="display:none; position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:250; background:black;">
+    <source src="assets/media/VideoEntrada.mp4" type="video/mp4">
+  </video>
+  <!-- vídeo do polvo em tela cheia que toca ao pressionar START (sem som, sem barras pretas) -->
+  <video id="polvoVideo" playsinline muted
+    style="display:none; position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:300; background:black;">
+    <!-- videoPolvoBatentonaTela.mp4 não disponível — elemento mantido para compatibilidade -->
+  </video>
+  <!-- overlay de câmera que desce mostrando a imagem de fundo inicial -->
+  <div id="cameraOverlay" class="camera-overlay"></div>
+  <!-- música de fundo -->
+  <audio id="musicaFundo" preload="auto" loop>
+    <source src="assets/media/MusicabackgroundInfinite.mp3" type="audio/mpeg">
+  </audio>
+  <!-- som de digitação -->
+  <audio id="talkSound" preload="auto">
+    <source src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3">
+  </audio>
+  <!-- Vídeo do peixe comendo câmera -->
+  <video id="peixeCameraVideo" playsinline muted
+    style="display:none; position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:700; background:black;">
+    <source src="assets/media/PeixeCamera.mp4" type="video/mp4">
+  </video>
+  <!-- Container de fases -->
+  <div id="phaseScreenContainer">
+    <img id="phaseBackground" src="assets/images/backgroundFasePeixes.png"
+      style="position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:-1;">
+    <div id="phaseExplainer">
+      <div id="phaseBookContent" class="book-slide-content">
+        <section class="book-page book-page-left">
+          <p id="phaseBookPage" class="book-page-number">PAGINA 1 DE TITULO</p>
+          <h2 id="phaseBookTitle" class="book-slide-title">FASE 1</h2>
+          <img id="phaseBookImage" class="book-slide-image" alt="">
+        </section>
+        <section class="book-page book-page-right">
+          <div id="phaseBookText" class="book-slide-text">edu</div>
+        </section>
+      </div>
+    </div>
+    <div id="phaseBookFlash" class="phase-book-flash"></div>
+    <div id="phaseFinishModal" class="phase-finish-modal">
+      <div class="phase-finish-card">
+        <h2>Parabens!</h2>
+        <p>Voce terminou de ler os slides.</p>
+        <div class="phase-finish-actions">
+          <button id="phaseReturnMapBtn" type="button">Voltar para o mapa</button>
+          <button id="phaseQuizBtn" type="button">Fazer quiz</button>
+        </div>
+      </div>
+    </div>
+    <div id="phaseControls">
+      <button id="phaseBackBtn" class="phase-nav-btn" aria-label="Anterior">&lt;-<br>ANTERIOR</button>
+      <button id="phaseNextBtn" class="phase-nav-btn" aria-label="Proxima">PROXIMO<br>-&gt;</button>
+    </div>
+    <img id="boatFases" src="assets/images/barcoFases.png"
+      style="position:absolute; width:100px; height:100px; object-fit:contain;">
+  </div>
+  <script>
+    /* =====================================================
+       ELEMENTOS
+    ===================================================== */
+    const introScreen = document.getElementById('introScreen');
+    const dialogueBox = document.getElementById('dialogueBox');
+    const dialogueContent = document.getElementById('dialogueContent');
+    const dialogueCursor = document.getElementById('dialogueCursor');
+    const dialogueActions = document.getElementById('dialogueActions');
+    const dialogueHint = document.getElementById('dialogueHint');
+    const doorYes = document.getElementById('doorYes');
+    const doorNo = document.getElementById('doorNo');
+    const flashOverlay = document.getElementById('flashOverlay');
+    const mainScreen = document.getElementById('mainScreen');
+    const mainVideo = document.getElementById('mainVideo');
+    const mainOverlay = document.getElementById('mainOverlay');
+    const mainContent = document.getElementById('mainContent');
+    const startBtn = document.getElementById('startBtn');
+    const bubbleVideo = document.getElementById('bubbleVideo');
+    const musicaFundo = document.getElementById('musicaFundo');
+    const talkSound = document.getElementById('talkSound');
+    const polvoVideo = document.getElementById('polvoVideo');
+    const namePrompt = document.getElementById('namePrompt');
+    const nameInput = document.getElementById('nameInput');
+    const nameSubmit = document.getElementById('nameSubmit');
+    const cameraOverlay = document.getElementById('cameraOverlay');
+    const peixesFases = document.getElementById('peixesFases');
+    const entradaVideo = document.getElementById('entradaVideo');
+    /* =====================================================
+       DIÁLOGOS (agora com prompt de nome e templates)
+    ===================================================== */
+    const dialoguesTemplate = [
+      "* Olá, {name}. ...Então você chegou até aqui.",
+      "* Esta porta guarda um mundo inteiro\nde containers e serviços.",
+      "* Você deseja abrir a porta?"
+    ];
+    let dialogues = [];
+    let dialogueIndex = 0;
+    let isTyping = false;
+    let typingInterval = null;
+    let currentFullText = '';
+    function initDialogues(name) {
+      const safeName = name && name.trim() ? name.trim() : 'visitante';
+      dialogues = dialoguesTemplate.map(t => t.replace('{name}', safeName));
+      dialogueIndex = 0;
+    }
+    function typeText(text, onDone) {
+      isTyping = true;
+      dialogueContent.textContent = '';
+      dialogueCursor.style.display = 'inline-block';
+      currentFullText = text;
+      let i = 0;
+      typingInterval = setInterval(() => {
+        dialogueContent.textContent += text[i];
+        // som de digitação leve
+        talkSound.currentTime = 0;
+        talkSound.volume = 0.06;
+        talkSound.play().catch(() => { });
+        i++;
+        if (i >= text.length) {
+          clearInterval(typingInterval);
+          isTyping = false;
+          if (onDone) onDone();
+        }
+      }, 32);
+    }
+    function skipTyping() {
+      if (!isTyping) return;
+      clearInterval(typingInterval);
+      dialogueContent.textContent = currentFullText;
+      isTyping = false;
+      checkLastDialogue();
+    }
+    function checkLastDialogue() {
+      if (dialogueIndex === dialogues.length - 1) {
+        // último diálogo: mostrar botões
+        dialogueActions.style.display = 'flex';
+        dialogueHint.style.display = 'none';
+        dialogueCursor.style.display = 'none';
+        // foco inicial em 'Sim'
+        setSelectedButton(doorYes);
+      }
+    }
+    function nextDialogue() {
+      if (isTyping) { skipTyping(); return; }
+      dialogueIndex++;
+      if (dialogueIndex < dialogues.length) {
+        typeText(dialogues[dialogueIndex], checkLastDialogue);
+      }
+    }
+    function showNamePrompt() {
+      namePrompt.style.display = 'flex';
+      document.getElementById('dialogueText').style.display = 'none';
+      dialogueHint.style.display = 'none';
+      nameInput.focus();
+    }
+    function hideNamePrompt() {
+      namePrompt.style.display = 'none';
+      document.getElementById('dialogueText').style.display = 'block';
+      dialogueHint.style.display = 'block';
+    }
+    function startIntroWithName(name) {
+      localStorage.setItem('playerName', name);
+      initDialogues(name);
+      hideNamePrompt();
+      setTimeout(() => {
+        dialogueBox.classList.add('visible');
+        typeText(dialogues[0], checkLastDialogue);
+      }, 200);
+    }
+    /* iniciar primeiro diálogo após pequeno delay */
+    window.addEventListener('DOMContentLoaded', () => {
+      const stored = localStorage.getItem('playerName');
+      setTimeout(() => {
+        if (stored) {
+          initDialogues(stored);
+          dialogueBox.classList.add('visible');
+          typeText(dialogues[0], checkLastDialogue);
+        } else {
+          // mostrar a caixa e pedir o nome antes de começar
+          dialogueBox.classList.add('visible');
+          showNamePrompt();
+        }
+      }, 800);
+      // Enter avança o diálogo (mas não durante o prompt de nome)
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        if (namePrompt.style.display === 'flex') return; // Enter no prompt trata o próprio input
+        if (dialogueActions.style.display === 'flex') return; // no Enter quando mostrando botões
+        nextDialogue();
+      });
+      // Clique na caixa também avança
+      dialogueBox.addEventListener('click', () => {
+        if (namePrompt.style.display === 'flex') return;
+        if (dialogueActions.style.display === 'flex') return;
+        nextDialogue();
+      });
+      // enviar nome
+      nameSubmit.addEventListener('click', () => {
+        const n = nameInput.value.trim();
+        if (!n) return;
+        startIntroWithName(n);
+      });
+      nameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          nameSubmit.click();
+        }
+      });
+    });
+    /* =====================================================
+       BOTÃO NÃO
+    ===================================================== */
+    doorNo.addEventListener('click', () => {
+      dialogueContent.textContent = '* Você precisa abrir a porta\npara continuar...';
+    });
+    /* =====================================================
+       BOTÃO SIM — animação estilo RE4
+    ===================================================== */
+    // Helper: visual selection for buttons
+    let selectedButton = null;
+    function setSelectedButton(btn) {
+      if (selectedButton) selectedButton.classList.remove('confirm');
+      selectedButton = btn;
+      if (selectedButton) selectedButton.classList.add('confirm');
+      selectedButton && selectedButton.focus();
+    }
+    // Navegação por teclado entre Sim / Não
+    document.addEventListener('keydown', (e) => {
+      if (dialogueActions.style.display !== 'flex') return;
+      const keysLeft = ['ArrowLeft', 'ArrowUp'];
+      const keysRight = ['ArrowRight', 'ArrowDown'];
+      if (keysLeft.includes(e.key)) {
+        // ir para a esquerda (Sim)
+        setSelectedButton(doorYes);
+        e.preventDefault();
+      } else if (keysRight.includes(e.key)) {
+        // ir para a direita (Não)
+        setSelectedButton(doorNo);
+        e.preventDefault();
+      } else if (e.key === 'Enter') {
+        // confirmar seleção
+        if (!selectedButton) return;
+        selectedButton.click();
+        e.preventDefault();
+      }
+    });
+    // Quando o usuário confirma 'Sim', tocar o vídeo de entrada antes de seguir
+    doorYes.addEventListener('click', () => {
+      doorYes.disabled = true;
+      doorNo.disabled = true;
+      // exibir e tocar o vídeo de entrada
+      if (entradaVideo) {
+        entradaVideo.style.display = 'block';
+        entradaVideo.play().catch(() => { });
+        // quando o vídeo terminar, seguir para o fluxo normal
+        entradaVideo.addEventListener('ended', () => {
+          entradaVideo.style.display = 'none';
+          // prosseguir com animação RE4 original
+          doOpenDoorFlow();
+        }, { once: true });
+      } else {
+        doOpenDoorFlow();
+      }
+    });
+    function doOpenDoorFlow() {
+      // 1. zoom na porta (câmera avança)
+      introScreen.classList.add('zoom-in');
+      // 2. flash branco e ir direto para mainScreen com botão START
+      setTimeout(() => {
+        flashOverlay.style.opacity = '0';
+        flashOverlay.style.transition = 'none';
+        void flashOverlay.offsetWidth; // reflow
+        flashOverlay.classList.add('active');
+        introScreen.classList.add('hidden');
+        flashOverlay.style.opacity = '0';
+        mainScreen.classList.add('visible');
+        mainVideo.play().catch(() => { });
+        iniciarMusica();
+      }, 1050);
+    }
+    /* =====================================================
+       MÚSICA
+    ===================================================== */
+    function iniciarMusica() {
+      musicaFundo.volume = 0.2;
+      musicaFundo.play().catch(() => { });
+    }
+    /* =====================================================
+       BOTÃO START — efeito zoom + bolhas
+    ===================================================== */
+    function playClickSound() {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(200, now);
+      osc.frequency.exponentialRampToValueAtTime(800, now + .15);
+      gain.gain.setValueAtTime(.3, now);
+      gain.gain.exponentialRampToValueAtTime(.01, now + .15);
+      osc.start(now); osc.stop(now + .15);
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.connect(gain2); gain2.connect(ctx.destination);
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(600, now + .08);
+      osc2.frequency.exponentialRampToValueAtTime(1200, now + .18);
+      gain2.gain.setValueAtTime(.2, now + .08);
+      gain2.gain.exponentialRampToValueAtTime(.01, now + .18);
+      osc2.start(now + .08); osc2.stop(now + .18);
+    }
+    // start sequence: play polvoVideo fullscreen (muted) then continue
+    startBtn.addEventListener('click', () => {
+      if (musicaFundo.paused) musicaFundo.play();
+      // disable start to prevent spam
+      startBtn.disabled = true;
+      startBtn.style.pointerEvents = 'none';
+      mainVideo.pause();
+      playClickSound();
+      mainContent.classList.add('active');
+      mainOverlay.classList.add('active');
+      setTimeout(() => {
+        bubbleVideo.style.display = 'block';
+        bubbleVideo.play().catch(() => { });
+      }, 700);
+    });
+    // Helper: zoom the polvo video slightly to crop 4:3 black bars
+    function zoomPolvoVideo() {
+      if (!polvoVideo) return;
+      polvoVideo.style.transform = 'scale(1.25)';
+      polvoVideo.style.transition = 'transform 1s ease';
+      polvoVideo.style.objectFit = 'cover';
+    }
+    function proceedAfterPolvo() {
+      // pause main background video
+      mainVideo.pause();
+      playClickSound();
+      mainContent.classList.add('active');
+      mainOverlay.classList.add('active');
+      setTimeout(() => {
+        bubbleVideo.style.display = 'block';
+        bubbleVideo.play().catch(() => { });
+      }, 700);
+    }
+    // após as bolhas aparecerem, descer a "câmera" e mostrar o fundo inicial
+    bubbleVideo.addEventListener('playing', () => {
+      // aguarda um pouco para as bolhas começarem a aparecer
+      setTimeout(() => {
+        cameraOverlay.classList.add('active');
+        // mostrar peixinhos quando a câmera descer
+        if (peixesFases) peixesFases.classList.add('visible');
+        // iniciar sistema de fases após bolhas aparecerem
+        initPhaseSystem();
+      }, 1400);
+    }, { once: true });
+    /* =====================================================
+       SISTEMA DE FASES COM BARCO
+    ===================================================== */
+    const phases = [
+      { name: 'edu', index: 0, completed: false },
+      { name: 'felipe', index: 1, completed: false },
+      { name: 'arakaki', index: 2, completed: false },
+      { name: 'igor', index: 3, completed: false },
+      { name: 'gustavo', index: 4, completed: false },
+      { name: 'rafa', index: 5, completed: false },
+      { name: 'portal', index: 6, completed: false, isPortal: true }
+    ];
+    let currentPhaseIndex = 0;
+    let boatContainer = document.getElementById('boatContainer');
+    let boat = document.getElementById('boat');
+    let phaseElements = document.querySelectorAll('#peixesFases > div');
+    function initPhaseSystem() {
+      // Sincroniza estado de fases completadas com o localStorage do quiz
+      try {
+        const progress = JSON.parse(localStorage.getItem('scb_progress') || '{}');
+        phases.forEach((phase, idx) => {
+          if (progress[`completed_${idx + 1}`]) {
+            phase.completed = true;
+          }
+        });
+      } catch (_) {}
+
+      // fazer o barco aparecer vindo da esquerda
+      boatContainer.classList.add('visible');
+      moveBoatToPhase(0);
+      updatePhaseUI();
+    }
+    function getPhasePosition(phaseIndex) {
+      // pegar a posição do peixe correspondente
+      if (phaseIndex >= phaseElements.length) return null;
+      const phaseEl = phaseElements[phaseIndex];
+      const rect = phaseEl.getBoundingClientRect();
+      // calcular o centro do elemento do peixe e converter para porcentagem da viewport
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const leftPercent = (centerX / window.innerWidth) * 100;
+      // bottom em %: calcular distância do fundo da viewport
+      const bottomPx = window.innerHeight - centerY;
+      const bottomPercent = (bottomPx / window.innerHeight) * 100;
+      // ajustar por tamanho do barco para que ele fique levemente à esquerda/embaixo do ponto
+      return { left: leftPercent - 8, bottom: bottomPercent - 6 };
+    }
+    function moveBoatToPhase(phaseIndex) {
+      if (!canAccessPhase(phaseIndex)) return false;
+      const pos = getPhasePosition(phaseIndex);
+      if (pos !== null) {
+        // aplicar left e bottom em porcentagem para movimento diagonal
+        boat.style.left = pos.left + '%';
+        boat.style.bottom = pos.bottom + '%';
+      }
+      currentPhaseIndex = phaseIndex;
+      return true;
+    }
+    function updatePhaseUI() {
+      // remover seleção anterior
+      phaseElements.forEach((el, idx) => {
+        el.classList.remove('selected');
+        el.classList.toggle('phase-locked', !canAccessPhase(idx));
+        el.classList.toggle('phase-clickable', canAccessPhase(idx));
+      });
+      // adicionar seleção atual
+      if (phaseElements[currentPhaseIndex]) {
+        phaseElements[currentPhaseIndex].classList.add('selected');
+      }
+    }
+    // navegação com setas
+    document.addEventListener('keydown', (e) => {
+      if (boatContainer.style.display === 'none' || peixesFases.classList.contains('visible') === false) return;
+
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        if (currentPhaseIndex > 0) {
+          if (moveBoatToPhase(currentPhaseIndex - 1)) updatePhaseUI();
+        }
+        e.preventDefault();
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        // avançar para a próxima fase (permitido sempre)
+        if (currentPhaseIndex < phases.length - 1) {
+          if (moveBoatToPhase(currentPhaseIndex + 1)) updatePhaseUI();
+        }
+        e.preventDefault();
+      } else if (e.key === 'Enter') {
+        // quando pressionar Enter, abrir painel da fase atual
+        if (canAccessPhase(currentPhaseIndex)) enterPhase(currentPhaseIndex);
+        e.preventDefault();
+      }
+    });
+    // clicar em um peixe/portal leva o barco até ele (agora todos clicáveis)
+    phaseElements.forEach((el, idx) => {
+      el.addEventListener('click', () => {
+        if (!moveBoatToPhase(idx)) return;
+        updatePhaseUI();
+        // abrir painel da fase ao clicar (portal ou fase normal)
+        enterPhase(idx);
+      });
+    });
+
+    // painel temático de fase com mapa integrado
+    const phaseOverlay = document.createElement('div');
+    phaseOverlay.id = 'phaseOverlay';
+    phaseOverlay.className = 'phase-overlay';
+    phaseOverlay.innerHTML = `
+      <div class="phase-panel">
+        <button class="phase-close">✕</button>
+        <h2 class="phase-title">FASE</h2>
+        <div class="phase-map" id="phaseMap"></div>
+        <div class="phase-body">
+          <p class="phase-nota">» Fase: <span id="phaseNota">???</span></p>
+          <p class="phase-score">Pontuação: <span id="phaseScore">0</span></p>
+          <p class="phase-desc" id="phaseDesc">Selecione uma fase para começar...</p>
+        </div>
+        <button class="phase-start">▶ COMEÇAR ◀</button>
+      </div>
+    `;
+    document.body.appendChild(phaseOverlay);
+
+    function buildPhaseMap() {
+      const mapEl = document.getElementById('phaseMap');
+      mapEl.innerHTML = '';
+      phases.forEach((phase, idx) => {
+        const item = document.createElement('div');
+        item.className = 'phase-map-item';
+        if (idx === currentPhaseIndex) item.classList.add('current');
+        if (phase.completed) item.classList.add('completed');
+        if (!canAccessPhase(idx)) item.classList.add('locked');
+        item.textContent = phase.isPortal ? '☆' : (idx + 1);
+        item.title = phase.isPortal ? '>>> PORTAL <<<' : `Fase ${idx + 1}: ${phase.name}`;
+        item.addEventListener('click', () => {
+          if (!moveBoatToPhase(idx)) return;
+          updatePhaseUI();
+          showPhaseOverlay(idx);
+        });
+        mapEl.appendChild(item);
+      });
+    }
+
+    function showPhaseOverlay(phaseIndex) {
+      if (!canAccessPhase(phaseIndex)) return;
+      const info = phases[phaseIndex] || { name: 'desconhecida' };
+      const titleEl = phaseOverlay.querySelector('.phase-title');
+      const notaEl = phaseOverlay.querySelector('#phaseNota');
+      const scoreEl = phaseOverlay.querySelector('#phaseScore');
+      const descEl = phaseOverlay.querySelector('#phaseDesc');
+
+      titleEl.textContent = info.isPortal ? '[ PORTAL FINAL ]' : `[ FASE ${phaseIndex + 1} ]`;
+      notaEl.textContent = info.isPortal ? 'CTHULHU' : `${info.name.toUpperCase()}`;
+      scoreEl.textContent = info.score || 0;
+
+      if (info.isPortal) {
+        descEl.textContent = '⚡⚡⚡ ABRA O PORTAL PARA AVANÇAR ⚡⚡⚡';
+      } else {
+        descEl.textContent = `Ajude a Libertar: ${info.name} Para descobrir os segrados do Docker! Clique em COMEÇAR.`;
+      }
+
+      buildPhaseMap();
+      phaseOverlay.classList.add('active');
+      const startBtnPhase = phaseOverlay.querySelector('.phase-start');
+      startBtnPhase && startBtnPhase.focus();
+    }
+
+    function hidePhaseOverlay() {
+      phaseOverlay.classList.remove('active');
+    }
+
+    // fechar/começar
+    phaseOverlay.addEventListener('click', (ev) => {
+      if (ev.target.matches('.phase-close')) hidePhaseOverlay();
+      if (ev.target.matches('.phase-start')) {
+        // se for portal, navegar para a FaseFinal (pasta "The boys")
+        if (phases[currentPhaseIndex] && phases[currentPhaseIndex].isPortal) {
+          // caminho com espaço codificado
+          window.location.href = '../index.html';
+          return;
+        }
+        // iniciar fase: abre a tela de conteúdo (livro de slides)
+        hidePhaseOverlay();
+        buildPhaseMap();
+        startPhaseScreen(currentPhaseIndex);
+      }
+    });
+
+    function enterPhase(phaseIndex) {
+      // abrir o painel temático vindo da direita
+      showPhaseOverlay(phaseIndex);
+    }
+
+    /* =====================================================
+       SISTEMA DE FASES COM BARCO
+    ===================================================== */
+
+    const phaseScreenContainer = document.getElementById('phaseScreenContainer');
+    const boatFases = document.getElementById('boatFases');
+    const peixeCameraVideo = document.getElementById('peixeCameraVideo');
+    const phaseBackBtn = document.getElementById('phaseBackBtn');
+    const phaseNextBtn = document.getElementById('phaseNextBtn');
+    const phaseBookContent = document.getElementById('phaseBookContent');
+    const phaseBookPage = document.getElementById('phaseBookPage');
+    const phaseBookTitle = document.getElementById('phaseBookTitle');
+    const phaseBookImage = document.getElementById('phaseBookImage');
+    const phaseBookText = document.getElementById('phaseBookText');
+    const phaseBookFlash = document.getElementById('phaseBookFlash');
+    const phaseFinishModal = document.getElementById('phaseFinishModal');
+    const phaseReturnMapBtn = document.getElementById('phaseReturnMapBtn');
+    const phaseQuizBtn = document.getElementById('phaseQuizBtn');
+
+    let boatPhaseX = window.innerWidth / 2;
+    let boatPhaseY = window.innerHeight / 2;
+    const boatPhaseSpeed = 6;
+    const boatPhaseSize = 100;
+    const phaseKeys = { w: false, a: false, s: false, d: false };
+    let boatPhaseActive = false;
+    let hoveredButton = null;
+    let isInPhaseScreen = false;
+    let phaseBookPhaseIndex = 0;
+    let phaseBookPageIndex = 0;
+    let phaseBookAnimating = false;
+
+    function canAccessPhase(phaseIndex) {
+      const phase = phases[phaseIndex];
+      if (!phase) return false;
+      if (phaseIndex === 0) return true;
+      if (phase.isPortal) return phases.slice(0, -1).every(item => item.completed);
+      return phases[phaseIndex - 1] && phases[phaseIndex - 1].completed;
+    }
+
+    const phaseBookSlides = {
+      arakaki: [
+        {
+          title: 'Services, Build e Images',
+          topics: [
+            'O bloco "services" é o coração do docker-compose.yml',
+            'Cada service = um container com configuração própria',
+            'Duas formas de definir a imagem: image usa uma imagem pronta do registry; build constrói a partir de um Dockerfile local'
+          ]
+        },
+        {
+          title: 'Build vs Image',
+          topics: [
+            'image: quando usar dependências como banco, cache e broker. Ex: image: postgres:16',
+            'build: quando usar sua aplicação. Ex: build: ./backend',
+            'Opções úteis do build: context, dockerfile, args e target'
+          ]
+        },
+        {
+          title: 'Exemplo Prático',
+          code: `services:
+  api:
+    build: ./backend
+    ports:
+      - "8080:8080"
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: secret`,
+          topics: [
+            'docker compose build → builda sem subir',
+            'Dica: combine build + image para tagear a imagem gerada'
+          ]
+        }
+      ],
+      gustavo: [
+        {
+          title: 'Variáveis de Ambiente e Arquivos .env',
+          topics: [
+            'O gerenciamento de variáveis é essencial para a segurança e portabilidade',
+            'environment define variáveis diretamente no docker-compose.yml',
+            '.env files armazenam definições e segredos em um arquivo local oculto',
+            'O Docker Compose lê automaticamente um arquivo .env na raiz do projeto',
+            'Dica de segurança: nunca envie o seu arquivo .env para o Git!'
+          ]
+        },
+        {
+          title: 'Controle de Inicialização com Depends On',
+          topics: [
+            'depends_on define a ordem de inicialização dos serviços',
+            'Por padrão, espera o container pai iniciar, não o serviço estar pronto',
+            'condition: service_started → comportamento padrão',
+            'condition: service_healthy → aguarda o Healthcheck passar',
+            'condition: service_completed_successfully → espera um container init finalizar com Exit Code 0'
+          ]
+        },
+        {
+          title: 'Exemplo Prático com Healthcheck',
+          code: `services:
+  api:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: \${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s`,
+          topics: [
+            'A api só tenta subir quando o banco db estiver pronto para receber conexões',
+            'O ${DB_PASSWORD} busca o valor configurado de forma segura no arquivo .env'
+          ]
+        }
+      ],
+      igor: [
+        {
+          title: 'Networking e Volumes no Docker Compose',
+          topics: [
+            'Networking é responsável pela comunicação entre os containers',
+            'Volumes garantem que os dados não sejam perdidos quando um container é reiniciado ou removido'
+          ]
+        },
+        {
+          title: 'Networking',
+          topics: [
+            'Containers ficam conectados em uma rede interna criada automaticamente',
+            'Container acessa o outro usando o nome do serviço (db: 3306)',
+            'Não utilizam localhost para acessar outros serviços'
+          ]
+        },
+        {
+          title: 'Volumes',
+          topics: [
+            'Volumes servem para salvar os dados fora do container',
+            'Muito utilizados principalmente em banco de dados'
+          ]
+        },
+        {
+          title: 'Exemplo',
+          image: 'assets/images/ExemploIgor.jpeg',
+          topics: [
+            'Aplicação e o banco estão conectados pela mesma rede, permitindo comunicação entre eles',
+            'O banco utiliza um volume para garantir persistência dos dados',
+            'Resumo final'
+          ]
+        }
+      ]
+    };
+
+    function fadeOut(duration = 1000) {
+      return new Promise(resolve => {
+        const fade = document.createElement('div');
+        fade.id = 'scb-fade-overlay';
+        fade.style.cssText = `
+          position: fixed;
+          inset: 0;
+          background: black;
+          z-index: 650;
+          opacity: 0;
+          transition: opacity ${duration}ms ease;
+        `;
+        document.body.appendChild(fade);
+
+        setTimeout(() => {
+          fade.style.opacity = '1';
+          setTimeout(resolve, duration);
+        }, 10);
+      });
+    }
+
+    function fadeIn(duration = 900) {
+      return new Promise(resolve => {
+        const fade = document.getElementById('scb-fade-overlay');
+        if (fade) {
+          fade.style.opacity = '0';
+          setTimeout(() => {
+            fade.remove();
+            resolve();
+          }, duration);
+        } else {
+          resolve();
+        }
+      });
+    }
+
+    function playPeixeVideo() {
+      return new Promise(resolve => {
+
+        function finish() {
+          peixeCameraVideo.style.transition = 'opacity 0.4s ease';
+          peixeCameraVideo.style.opacity = '0';
+          setTimeout(() => {
+            peixeCameraVideo.style.display = 'none';
+            resolve();
+          }, 400);
+        }
+
+        peixeCameraVideo.style.display = 'block';
+        peixeCameraVideo.style.opacity = '1';
+        peixeCameraVideo.currentTime = 0;
+
+        const playPromise = peixeCameraVideo.play();
+
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // autoplay bloqueado ou erro — pula o vídeo
+            peixeCameraVideo.style.display = 'none';
+            resolve();
+          });
+        }
+
+        // fallback: se o vídeo não tiver src válida ou durar 0s
+        peixeCameraVideo.addEventListener('error', () => {
+          peixeCameraVideo.style.display = 'none';
+          resolve();
+        }, { once: true });
+
+        peixeCameraVideo.addEventListener('ended', () => {
+          peixeCameraVideo.style.transition = 'opacity 1s ease';
+          peixeCameraVideo.style.opacity = '0';
+          setTimeout(() => {
+            peixeCameraVideo.style.display = 'none';
+            resolve();
+          }, 1000);
+        }, { once: true });
+      });
+    }
+
+    function getBookPhase() {
+      return phases[phaseBookPhaseIndex] || phases[0];
+    }
+
+    function getBookSlides() {
+      const phase = getBookPhase();
+      return phaseBookSlides[phase.name] || [
+        {
+          title: `FASE ${phase.index + 1}`,
+          topics: [`Texto: ${phase.name}`]
+        },
+        {
+          title: `FASE ${phase.index + 1}.1`,
+          topics: [`Texto: ${phase.name}`]
+        },
+        {
+          title: `FASE ${phase.index + 1}.2`,
+          topics: [`Texto: ${phase.name}`]
+        }
+      ];
+    }
+
+    function renderPhaseBook() {
+      const phase = getBookPhase();
+      if (!phase) return;
+
+      const slides = getBookSlides();
+      const slide = slides[phaseBookPageIndex] || slides[0];
+      phaseBookPage.textContent = slide.title;
+      phaseBookTitle.textContent = `PAGINA ${phaseBookPageIndex + 1}`;
+      if (slide.image) {
+        phaseBookImage.src = slide.image;
+        phaseBookImage.alt = slide.title;
+        phaseBookImage.style.display = 'block';
+      } else {
+        phaseBookImage.removeAttribute('src');
+        phaseBookImage.alt = '';
+        phaseBookImage.style.display = 'none';
+      }
+      phaseBookText.replaceChildren();
+
+      if (slide.code) {
+        const codeBlock = document.createElement('pre');
+        codeBlock.className = 'book-slide-code';
+        codeBlock.textContent = slide.code;
+        phaseBookText.appendChild(codeBlock);
+      }
+
+      if (slide.topics && slide.topics.length) {
+        const list = document.createElement('ul');
+        slide.topics.forEach(topic => {
+          const item = document.createElement('li');
+          item.textContent = topic;
+          list.appendChild(item);
+        });
+        phaseBookText.appendChild(list);
+      }
+
+      if (phaseBackBtn) {
+        phaseBackBtn.disabled = false;
+        phaseBackBtn.classList.toggle('is-locked', phaseBookPageIndex <= 0);
+        phaseBackBtn.setAttribute('aria-disabled', phaseBookPageIndex <= 0 ? 'true' : 'false');
+      }
+      if (phaseNextBtn) {
+        phaseNextBtn.disabled = false;
+        phaseNextBtn.classList.remove('is-locked');
+        phaseNextBtn.setAttribute('aria-disabled', 'false');
+        phaseNextBtn.innerHTML = phaseBookPageIndex >= slides.length - 1 ? 'FINALIZAR<br>-&gt;' : 'PROXIMO<br>-&gt;';
+      }
+      if (isInPhaseScreen) updatePhaseBoat();
+    }
+
+    function blinkPhaseBook() {
+      return new Promise(resolve => {
+        phaseBookFlash.classList.add('active');
+        setTimeout(() => {
+          phaseBookFlash.classList.remove('active');
+          resolve();
+        }, 180);
+      });
+    }
+
+    function showPhaseFinishModal() {
+      phaseFinishModal.classList.add('active');
+      phaseKeys.w = false;
+      phaseKeys.a = false;
+      phaseKeys.s = false;
+      phaseKeys.d = false;
+      if (hoveredButton) hoveredButton.classList.remove('hovered');
+      hoveredButton = null;
+    }
+
+    function hidePhaseFinishModal() {
+      phaseFinishModal.classList.remove('active');
+    }
+
+    function completePhaseAndReturnToMap() {
+      const phase = phases[phaseBookPhaseIndex];
+      if (phase) phase.completed = true;
+      hidePhaseFinishModal();
+      closePhaseScreen();
+      currentPhaseIndex = phaseBookPhaseIndex;
+      updatePhaseUI();
+      buildPhaseMap();
+    }
+
+    async function goToNextBookPage() {
+      const slides = getBookSlides();
+      if (phaseBookAnimating) return;
+      if (phaseBookPageIndex >= slides.length - 1) {
+        showPhaseFinishModal();
+        return;
+      }
+
+      await changeBookPage(phaseBookPageIndex + 1);
+    }
+
+    async function goToPreviousBookPage() {
+      if (phaseBookAnimating || phaseBookPageIndex <= 0) return;
+
+      await changeBookPage(phaseBookPageIndex - 1);
+    }
+
+    async function changeBookPage(nextIndex) {
+      phaseBookAnimating = true;
+      phaseBookContent.classList.add('fading');
+      await blinkPhaseBook();
+
+      setTimeout(() => {
+        phaseBookPageIndex = nextIndex;
+        renderPhaseBook();
+        phaseBookContent.classList.remove('fading');
+        phaseBookAnimating = false;
+      }, 180);
+    }
+
+    async function startPhaseScreen(phaseIndex) {
+      if (phases[phaseIndex].isPortal) return;
+
+      isInPhaseScreen = true;
+      phaseBookPhaseIndex = phaseIndex;
+      phaseBookPageIndex = 0;
+
+      hidePhaseFinishModal();
+
+      phaseKeys.w = false;
+      phaseKeys.a = false;
+      phaseKeys.s = false;
+      phaseKeys.d = false;
+
+      boatPhaseX = window.innerWidth / 2 - boatPhaseSize / 2;
+      boatPhaseY = window.innerHeight / 2 - boatPhaseSize / 2;
+
+      boatPhaseActive = false;
+
+      renderPhaseBook();
+
+      // fade para preto
+      await fadeOut(800);
+
+      // vídeo do peixe
+      await playPeixeVideo();
+
+      // ATIVA A TELA ANTES DO FADE IN
+      phaseScreenContainer.classList.add('active');
+
+      updatePhaseBoat();
+      startPhaseBoatLoop();
+
+      // agora revela suavemente
+      await fadeIn(800);
+    }
+
+    function closePhaseScreen() {
+      hidePhaseFinishModal();
+      phaseScreenContainer.classList.remove('active');
+      isInPhaseScreen = false;
+      boatPhaseActive = false;
+      phaseKeys.w = false;
+      phaseKeys.a = false;
+      phaseKeys.s = false;
+      phaseKeys.d = false;
+      if (hoveredButton) hoveredButton.classList.remove('hovered');
+      hoveredButton = null;
+      boatFases.classList.remove('active');
+    }
+
+    function updatePhaseBoat() {
+
+      boatFases.style.left = boatPhaseX + 'px';
+      boatFases.style.top = boatPhaseY + 'px';
+
+      const buttons = document.querySelectorAll('.phase-nav-btn');
+      let nextHoveredButton = null;
+      const boatRectRaw = boatFases.getBoundingClientRect();
+      const collisionPadding = 18;
+      const boatRect = {
+        left: boatRectRaw.left - collisionPadding,
+        right: boatRectRaw.right + collisionPadding,
+        top: boatRectRaw.top - collisionPadding,
+        bottom: boatRectRaw.bottom + collisionPadding
+      };
+
+      buttons.forEach(btn => {
+        const rect = btn.getBoundingClientRect();
+
+        const collision =
+          boatRect.right > rect.left &&
+          boatRect.left < rect.right &&
+          boatRect.bottom > rect.top &&
+          boatRect.top < rect.bottom;
+
+        if (collision && !btn.classList.contains('is-locked') && !nextHoveredButton) {
+          nextHoveredButton = btn;
+        }
+      });
+
+      if (hoveredButton !== nextHoveredButton) {
+        if (hoveredButton) hoveredButton.classList.remove('hovered');
+        if (nextHoveredButton) nextHoveredButton.classList.add('hovered');
+        hoveredButton = nextHoveredButton;
+      }
+
+    }
+
+    function startPhaseBoatLoop() {
+      function loop() {
+        if (!isInPhaseScreen) return;
+
+        if (phaseKeys.w) boatPhaseY = Math.max(boatPhaseSize / 2, boatPhaseY - boatPhaseSpeed);
+        if (phaseKeys.s) boatPhaseY = Math.min(window.innerHeight - boatPhaseSize / 2, boatPhaseY + boatPhaseSpeed);
+        if (phaseKeys.a) boatPhaseX = Math.max(boatPhaseSize / 2, boatPhaseX - boatPhaseSpeed);
+        if (phaseKeys.d) boatPhaseX = Math.min(window.innerWidth - boatPhaseSize / 2, boatPhaseX + boatPhaseSpeed);
+
+        updatePhaseBoat();
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+
+    // Controles do barco de fases
+    document.addEventListener('keydown', (e) => {
+      if (!isInPhaseScreen) return;
+      if (phaseFinishModal.classList.contains('active')) return;
+
+      if (e.key.toLowerCase() === 'w' || e.key === 'ArrowUp') {
+        phaseKeys.w = true;
+        e.preventDefault();
+      }
+      if (e.key.toLowerCase() === 'a' || e.key === 'ArrowLeft') {
+        phaseKeys.a = true;
+        e.preventDefault();
+      }
+      if (e.key.toLowerCase() === 's' || e.key === 'ArrowDown') {
+        phaseKeys.s = true;
+        e.preventDefault();
+      }
+      if (e.key.toLowerCase() === 'd' || e.key === 'ArrowRight') {
+        phaseKeys.d = true;
+        e.preventDefault();
+      }
+
+      // Enter para brilho
+      if (e.key === 'Enter') {
+        if (hoveredButton && !hoveredButton.classList.contains('is-locked')) {
+          hoveredButton.click();
+        } else {
+          boatPhaseActive = !boatPhaseActive;
+          boatFases.classList.toggle('active', boatPhaseActive);
+        }
+        e.preventDefault();
+      }
+
+      // ESC para fechar
+      if (e.key === 'Escape') {
+        closePhaseScreen();
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.key.toLowerCase() === 'w' || e.key === 'ArrowUp') phaseKeys.w = false;
+      if (e.key.toLowerCase() === 'a' || e.key === 'ArrowLeft') phaseKeys.a = false;
+      if (e.key.toLowerCase() === 's' || e.key === 'ArrowDown') phaseKeys.s = false;
+      if (e.key.toLowerCase() === 'd' || e.key === 'ArrowRight') phaseKeys.d = false;
+    });
+
+    // Interceptar clique em COMEÇAR para iniciar phase screen
+    phaseOverlay.addEventListener('click', (ev) => {
+      if (ev.target.matches('.phase-close')) hidePhaseOverlay();
+      if (ev.target.matches('.phase-start')) {
+        if (phases[currentPhaseIndex] && phases[currentPhaseIndex].isPortal) {
+          window.location.href = '../index.html';
+          return;
+        }
+        hidePhaseOverlay();
+        buildPhaseMap();
+        startPhaseScreen(currentPhaseIndex);
+      }
+    });
+
+    // Botões de navegação no mapa de fases
+    if (phaseBackBtn) {
+      phaseBackBtn.addEventListener('click', () => {
+        goToPreviousBookPage();
+      });
+    }
+
+    if (phaseNextBtn) {
+      phaseNextBtn.addEventListener('click', () => {
+        goToNextBookPage();
+      });
+    }
+
+    if (phaseReturnMapBtn) {
+      phaseReturnMapBtn.addEventListener('click', () => {
+        completePhaseAndReturnToMap();
+      });
+    }
+
+    if (phaseQuizBtn) {
+      phaseQuizBtn.addEventListener('click', () => {
+        // phaseBookPhaseIndex: 0-based (fase 1 = index 0, fase 2 = index 1, ...)
+        const faseNum = phaseBookPhaseIndex + 1;
+        window.location.href = `quiz.html?fase=${faseNum}`;
+      });
+    }
+  </script>
+</body>
+
+</html>
