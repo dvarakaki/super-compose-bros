@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/gif" href="assets/images/boss-final.gif">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Docker Compose · Quiz</title>
+  <!-- Fontes: Press Start 2P (estilo pixel) e Inter (moderna) -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Ícones Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <!-- Estilos personalizados -->
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+<!-- Fundo decorativo com bolhas animadas -->
+<div class="ocean">
+  <div class="bubbles" id="bubbles"></div>
+</div>
+
+<div class="page">
+  <div class="card fade-in" id="card">
+
+    <!-- CABEÇALHO: título, badges de progresso/pontuação, botões reiniciar e mapa -->
+    <div class="card-header">
+      <div class="header-title">
+        <img src="assets/images/boss-final.gif" alt="Boss" style="height:1.4rem;width:auto;vertical-align:middle;filter:drop-shadow(0 0 6px rgba(147,51,234,0.6))">
+        <span id="header-title-text">Docker Compose · Quiz</span>
+      </div>
+      <div class="header-meta">
+        <span class="badge" id="prog-badge">Pergunta 1/5</span>
+        <span class="badge score-badge" id="score-badge">
+          <i class="fa-solid fa-star" style="font-size:0.7rem;margin-right:3px"></i>
+          <span id="score-val">0</span><span id="score-total">/5</span>
+        </span>
+        <button class="btn-restart-header" id="btn-restart-header" onclick="restartQuiz()">
+          <i class="fa-solid fa-rotate-left"></i> Reiniciar
+        </button>
+        <a href="mapa.html" class="btn-back-map">
+          <i class="fa-solid fa-map"></i> Mapa
+        </a>
+      </div>
+    </div>
+
+    <!-- BARRA DE PROGRESSO -->
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+
+    <!-- ÁREA DINÂMICA: perguntas injetadas via JS -->
+    <div class="card-body" id="question-area"></div>
+
+    <!-- RODAPÉ: indicadores visuais (dots) e mensagem de orientação -->
+    <div class="card-footer" id="card-footer">
+      <div class="footer-dots" id="footer-dots"></div>
+      <span id="footer-hint">Selecione uma opção para continuar</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOAST: notificações temporárias (ex: "Resposta correta!") -->
+<div class="toast" id="toast" role="alert" aria-live="assertive">
+  <i class="fa-solid toast-icon" id="toast-icon"></i>
+  <span class="toast-msg" id="toast-msg"></span>
+</div>
+
+<!-- Lógica do quiz (perguntas, pontuação, navegação) -->
+<script src="js/quiz.js"></script>
+</body>
+</html>
