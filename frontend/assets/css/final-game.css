@@ -1,0 +1,959 @@
+/* ===== RESET / GLOBAL ===== */
+
+* {
+  user-select: none;
+}
+
+img {
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+html,
+body {
+  height: 100vh;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  background: black;
+}
+
+/* ===== VIEWPORT FIXA DE JOGO ===== */
+
+#game-root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1542px;
+  height: 728px;
+  transform-origin: top left;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* ===== CENÁRIO (fundo) ===== */
+
+#cenario {
+  position: fixed;
+  z-index: 0;
+  object-fit: cover;
+}
+
+/* ===== PERSONAGENS ===== */
+
+#p1,
+#boss {
+  position: absolute;
+  bottom: 0;
+  left: 100px;
+}
+
+#magoVermelho {
+  width: 100px;
+  height: 100px;
+  clip-path: inset(50px 0 0 0);
+}
+
+#boss img {
+  width: 400px;
+  height: 400px;
+}
+
+/* ===== BARRA DE VIDA DO BOSS ===== */
+
+#boss-hp-bar {
+  position: absolute;
+  top: 45px;
+  left: 47%;
+  transform: translateX(-50%);
+  width: 90%;
+  height: 13px;
+  border: 1px solid #111;
+  border-radius: 5px;
+  background: #333;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+#boss-hp-fill {
+  width: 100%;
+  height: 100%;
+  background: rgb(200, 11, 11);
+  transition: width 0.3s ease;
+}
+
+/* ===== PAINEL DE VIDAS DO JOGADOR ===== */
+
+.painel-vidas {
+  position: absolute;
+  bottom: 27px;
+  left: 36px;
+  padding: 10px 15px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid #fff;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  width: 83px;
+  height: 12px;
+}
+
+#vidas-vermelho {
+  position: absolute;
+  bottom: 2.5px;
+  left: 2px;
+  display: flex;
+  gap: 8px;
+  z-index: 1000;
+}
+
+#vidas-vermelho img {
+  width: 30px;
+  height: 30px;
+  transition: opacity 0.3s;
+}
+
+/* ===== CABEÇA DO PERSONAGEM ===== */
+
+#cabeca-container {
+  position: absolute;
+  top: 4px;
+  left: 10px;
+  pointer-events: none;
+  z-index: 50;
+  width: 105px;
+  height: 75px;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+#cabeca-personagem {
+  width: 75px;
+  height: 65px;
+  image-rendering: pixelated;
+  object-fit: fill;
+}
+
+/* ===== PROJÉTEIS ===== */
+
+.projetil {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* ===== BOTÃO DE PAUSE ===== */
+
+#pause-button {
+  position: absolute;
+  top: 30px;
+  right: 50px;
+  z-index: 3000;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  font-size: 18px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#pause-button:focus,
+#pause-button:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* ===== OVERLAY DE PAUSE ===== */
+
+#pause-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  justify-content: center;
+  align-items: center;
+  z-index: 3500;
+  backdrop-filter: blur(5px);
+  background: rgba(5, 10, 30, 0.38);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+#pause-overlay.show {
+  opacity: 1;
+}
+
+#pause-overlay.closing {
+  opacity: 0;
+}
+
+#pause-menu {
+  width: 500px;
+  padding: 45px;
+  border-radius: 22px;
+  background: linear-gradient(
+    180deg,
+    rgba(45, 45, 55, 0.92) 0%,
+    rgba(20, 20, 25, 0.95) 100%
+  );
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 0 50px rgba(0, 0, 0, 0.55),
+    0 25px 50px rgba(0, 0, 0, 0.6),
+    inset 0 2px 2px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  text-align: center;
+  color: white;
+  transform: scale(0.92);
+  opacity: 0;
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
+}
+
+#pause-overlay.show #pause-menu {
+  transform: scale(1);
+  opacity: 1;
+}
+
+#pause-overlay.closing #pause-menu {
+  transform: scale(0.88);
+  opacity: 0;
+}
+
+#pause-menu h2 {
+  font-size: 50px;
+  color: #f2f2f2;
+  letter-spacing: 3px;
+  margin-bottom: 35px;
+  text-shadow:
+    0 0 12px rgba(255, 255, 255, 0.12),
+    0 4px 8px rgba(0, 0, 0, 0.6);
+}
+
+#pause-menu button {
+  width: 340px;
+  height: 75px;
+  margin: 14px 0;
+  border: none;
+  border-radius: 18px;
+  cursor: pointer;
+  font-size: 22px;
+  font-weight: 900;
+  color: white;
+  letter-spacing: 2px;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+#pause-menu button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0) 35%
+  );
+  pointer-events: none;
+}
+
+#resume-button {
+  background: linear-gradient(180deg, #4ecb71 0%, #22863d 55%, #145224 100%);
+  box-shadow:
+    0 10px 0 #103d1b,
+    0 18px 35px rgba(0, 0, 0, 0.45),
+    0 0 25px rgba(0, 255, 90, 0.18);
+}
+
+#resume-button:hover {
+  transform: translateY(-2px) scale(1.01);
+  background: linear-gradient(180deg, #46b967 0%, #1f7a38 55%, #103f1c 100%);
+  box-shadow:
+    0 10px 0 #0d3116,
+    0 18px 35px rgba(0, 0, 0, 0.42),
+    0 0 25px rgba(0, 255, 90, 0.22);
+}
+
+#exit-button {
+  background: linear-gradient(180deg, #ff5d5d 0%, #a91d1d 50%, #5e0b0b 100%);
+  box-shadow:
+    0 10px 0 #420707,
+    0 18px 35px rgba(0, 0, 0, 0.45),
+    0 0 25px rgba(255, 0, 0, 0.2);
+}
+
+#exit-button:hover {
+  transform: translateY(-2px) scale(1.01);
+  background: linear-gradient(180deg, #d94a4a 0%, #8b1818 50%, #470808 100%);
+  box-shadow:
+    0 10px 0 #300505,
+    0 18px 35px rgba(0, 0, 0, 0.42),
+    0 0 25px rgba(255, 0, 0, 0.2);
+}
+
+#pause-menu button:active {
+  transform: translateY(5px) scale(0.98);
+}
+
+/* ===== OVERLAY: BOSS DERROTADO ===== */
+
+#boss-dead-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+#boss-dead-overlay img {
+  max-width: 80%;
+  max-height: 80%;
+}
+
+#boss.boss-dead {
+  bottom: 73px !important;
+}
+
+/* ===== OVERLAY: GAME OVER ===== */
+
+#game-over-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+}
+
+#game-over-overlay img {
+  max-width: 70%;
+  max-height: 50%;
+  margin-bottom: 30px;
+}
+
+#restart-button {
+  margin-top: 30px;
+  width: 400px;
+  height: 80px;
+  font-size: 24px;
+  font-family: "Press Start 2P", cursive;
+  font-weight: 900;
+  color: white;
+  border: 4px solid #641818;
+  border-radius: 18px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  background: linear-gradient(180deg, #ff4b4b 0%, #a31515 45%, #4d0909 100%);
+  text-shadow: 0 3px 5px rgba(0, 0, 0, 0.6);
+  box-shadow:
+    0 10px 0 #3d0808,
+    0 20px 35px rgba(0, 0, 0, 0.45),
+    0 0 30px rgba(255, 0, 0, 0.25),
+    inset 0 2px 3px rgba(255, 255, 255, 0.15),
+    inset 0 -10px 20px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+  transform: scale(0.9);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    filter 0.15s ease;
+}
+
+#restart-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0) 40%
+  );
+  pointer-events: none;
+}
+
+#restart-button:hover {
+  transform: translateY(-4px) scale(0.91);
+  filter: brightness(1.1);
+  box-shadow:
+    0 16px 0 #300707,
+    0 28px 45px rgba(0, 0, 0, 0.55),
+    0 0 45px rgba(255, 0, 0, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2);
+}
+
+#restart-button:active {
+  transform: translateY(5px) scale(0.98);
+  box-shadow:
+    0 5px 0 #2a0606,
+    0 10px 18px rgba(0, 0, 0, 0.3),
+    inset 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+/* ===== OVERLAY: VITÓRIA FINAL ===== */
+
+#victory-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  justify-content: center;
+  align-items: center;
+  z-index: 4000;
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0px);
+  opacity: 0;
+  transition:
+    background 1s ease,
+    backdrop-filter 1s ease,
+    opacity 0.8s ease;
+}
+
+#victory-overlay.show {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+#victory-box {
+  width: 85%;
+  max-width: 1100px;
+  min-height: 510px;
+  padding: 40px;
+  border-radius: 24px;
+  background: rgba(10, 10, 10, 0.88);
+  border: 3px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 0 40px rgba(0, 0, 0, 0.6),
+    0 0 80px rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  transform: translateY(100px) scale(0.75);
+  filter: blur(20px);
+  opacity: 0;
+  transition:
+    transform 0.8s cubic-bezier(0.17, 0.89, 0.32, 1.28),
+    opacity 0.8s ease,
+    filter 0.8s ease;
+}
+
+#victory-overlay.show #victory-box {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  filter: blur(0);
+}
+
+#victory-box h1 {
+  font-family: "Press Start 2P", cursive;
+  font-size: 42px;
+  color: #fff;
+  text-align: center;
+  line-height: 1.4;
+  opacity: 0;
+  transform: translateY(30px);
+  transition:
+    opacity 0.7s ease 0.35s,
+    transform 0.7s ease 0.35s;
+}
+
+#victory-overlay.show #victory-box h1 {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#victory-box img {
+  max-width: 95%;
+  max-height: 330px;
+  margin-top: 60px;
+  image-rendering: pixelated;
+  transform: scale(1.2) translateY(40px);
+  opacity: 0;
+  transition:
+    transform 0.8s ease 0.25s,
+    opacity 0.8s ease 0.25s;
+}
+
+#victory-overlay.show #victory-box img {
+  transform: scale(1.5) translateY(0);
+  opacity: 1;
+}
+
+#continue-button {
+  align-self: flex-end;
+  margin-top: auto;
+  margin-right: 10px;
+  width: 260px;
+  height: 70px;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #4ecb71 0%, #22863d 55%, #145224 100%);
+  box-shadow:
+    0 10px 0 #103d1b,
+    0 18px 35px rgba(0, 0, 0, 0.45),
+    0 0 25px rgba(0, 255, 90, 0.18);
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+#continue-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0) 40%
+  );
+  pointer-events: none;
+}
+
+#continue-button:hover {
+  transform: translateY(-3px) scale(1.01);
+  filter: brightness(1.08);
+  background: linear-gradient(180deg, #5bdd80 0%, #289a47 55%, #17612b 100%);
+  box-shadow:
+    0 14px 0 #0d3116,
+    0 24px 40px rgba(0, 0, 0, 0.5),
+    0 0 35px rgba(0, 255, 90, 0.25);
+}
+
+#continue-button:active {
+  transform: translateY(5px) scale(0.98);
+  box-shadow:
+    0 5px 0 #0b2a13,
+    0 10px 18px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== ESTADOS DO JOGADOR ===== */
+
+.imune {
+  opacity: 0.99;
+  pointer-events: none;
+}
+
+#p1.imune img {
+  opacity: 0.7;
+  filter: grayscale(60%);
+}
+
+.jogador-morto {
+  opacity: 0;
+}
+
+/* ===== FANTASMA ===== */
+
+.ghost {
+  position: absolute;
+  pointer-events: none;
+  width: 100px;
+  height: 100px;
+  animation-duration: 2s;
+  animation-fill-mode: forwards;
+  opacity: 0.6;
+  z-index: 1500;
+  animation-play-state: running !important;
+}
+
+@keyframes ghost-left {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-100px) scale(0.8) rotate(-10deg);
+  }
+}
+
+@keyframes ghost-right {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-100px) scale(0.8) rotate(10deg);
+  }
+}
+
+/* ===== TELA INICIAL ===== */
+
+#start-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  backdrop-filter: blur(6px);
+  background: rgba(5, 10, 30, 0.65);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease,
+    filter 0.5s ease;
+}
+
+#start-screen.starting {
+  opacity: 0;
+  transform: scale(1.08);
+  filter: blur(10px);
+}
+
+#menu-bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(0.3) brightness(0.75) blur(6px);
+  transform: scale(1.1);
+  z-index: -1;
+}
+
+#start-box {
+  width: 80%;
+  max-width: 1100px;
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  color: white;
+  font-family: "Press Start 2P", cursive;
+  transform: scale(0.9);
+  animation: menuEnter 0.8s ease;
+}
+
+#start-box h1 {
+  font-size: 55px;
+  margin-bottom: 40px;
+  color: #ddd;
+}
+
+#controls-container {
+  display: flex;
+  justify-content: center;
+  gap: 50px;
+  margin-bottom: 40px;
+}
+
+.control-card {
+  padding: 30px;
+  width: 350px;
+}
+
+.control-card.segundo {
+  margin-top: 60px;
+}
+
+.control-card p {
+  font-size: 40px;
+  margin-top: 20px;
+  font-weight: bold;
+}
+
+.keys {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.top-key {
+  margin-bottom: 10px;
+}
+
+.bottom-keys {
+  display: flex;
+  gap: 10px;
+}
+
+.top-key,
+.bottom-keys div,
+.single-key {
+  width: 90px;
+  height: 90px;
+  background: #222;
+  border: 4px solid black;
+  border-radius: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 50px;
+  font-weight: bold;
+  box-shadow: 0 0 20px rgb(135, 135, 135);
+}
+
+.single-key {
+  margin: auto;
+}
+
+#start-button {
+  width: 720px;
+  height: 95px;
+  margin-top: -170px;
+  border: 5px solid #4d4c50;
+  border-radius: 20px;
+  font-size: 30px;
+  font-weight: 900;
+  color: white;
+  font-family: "Press Start 2P", cursive;
+  background: linear-gradient(180deg, #747077 0%, #2c2c2c 38%, #474648 100%);
+  cursor: pointer;
+  text-shadow: 0 3px 5px rgba(0, 0, 0, 0.6);
+  box-shadow:
+    0 12px 0 #38373a,
+    0 24px 42px rgba(32, 32, 32, 0.45),
+    0 0 30px rgba(48, 47, 50, 0.45),
+    inset 0 2px 3px rgba(255, 255, 255, 0.16),
+    inset 0 -10px 28px rgba(37, 37, 37, 0.45);
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 2px;
+  transform: scale(0.8);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    filter 0.16s ease;
+}
+
+#start-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.18),
+    rgba(255, 255, 255, 0) 40%
+  );
+  pointer-events: none;
+}
+
+#start-button:hover {
+  transform: translateY(-4px) scale(0.81);
+  filter: brightness(1.12);
+  box-shadow:
+    0 18px 0 #2d2b31,
+    0 32px 45px rgba(0, 0, 0, 0.55),
+    0 0 45px rgba(54, 43, 60, 0.55),
+    inset 0 3px 4px rgba(255, 255, 255, 0.2);
+}
+
+#start-button:active {
+  transform: translateY(6px) scale(0.83);
+  box-shadow:
+    0 6px 0 #39383a,
+    0 10px 18px rgba(0, 0, 0, 0.25),
+    inset 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+@keyframes menuEnter {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.92);
+    filter: blur(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(0.9);
+    filter: blur(0);
+  }
+}
+
+/* ===== FADE DE TRANSIÇÃO ===== */
+
+#transition-fade {
+  position: fixed;
+  inset: 0;
+  background: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 999999;
+  transition: opacity 1s ease;
+}
+
+#transition-fade.show {
+  opacity: 1;
+}
+
+#prepare-text {
+  font-family: "Press Start 2P", cursive;
+  font-size: 42px;
+  color: white;
+  letter-spacing: 4px;
+  opacity: 0;
+  transform: scale(0.9);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
+  text-shadow:
+    0 0 15px rgba(255, 255, 255, 0.25),
+    0 0 35px rgba(255, 255, 255, 0.15);
+}
+
+#prepare-text.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ===== CUTSCENE ===== */
+
+#cutscene-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50000;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#cutscene-overlay.hidden {
+  display: none;
+}
+
+.speech-bubble {
+  position: absolute;
+  background: white;
+  border: 3px solid #111;
+  border-radius: 18px;
+  padding: 16px 26px;
+  font-family: "Press Start 2P", cursive;
+  font-size: 19px;
+  color: #111;
+  white-space: nowrap;
+  box-shadow: 3px 3px 0 #111;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 50001;
+}
+
+.speech-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -14px;
+  left: 20px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 14px solid #111;
+}
+
+.speech-bubble.bubble-boss::after {
+  left: auto;
+  right: 20px;
+}
+
+.speech-bubble.show {
+  opacity: 1;
+}
+
+#cutscene-mago {
+  position: absolute;
+  bottom: -200px;
+  width: 100px;
+  height: 100px;
+}
+
+#cutscene-mago img.sprite {
+  width: 100px;
+  height: 100px;
+  clip-path: inset(50px 0 0 0);
+}
+
+#cutscene-mago .cabeca-cut {
+  width: 105px;
+  height: 75px;
+  position: absolute;
+  top: 4px;
+  left: 10px;
+  overflow: hidden;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 50;
+}
+
+#cutscene-mago .cabeca-cut img {
+  image-rendering: pixelated;
+  object-fit: fill;
+  pointer-events: none;
+}
+
+#cutscene-boss {
+  position: absolute;
+  bottom: 85px;
+  width: 400px;
+  height: 400px;
+}
+
+#cutscene-boss img {
+  width: 400px;
+  height: 400px;
+}
+
+#cutscene-bubble-mago {
+  bottom: 210px;
+}
+
+#cutscene-bubble-boss {
+  bottom: 490px;
+}
+
+/* ===== ELEMENTOS OCULTOS ATÉ O JOGO INICIAR ===== */
+
+#p1,
+#boss,
+#boss-hp-bar,
+#pause-button,
+#painel-vermelho {
+  display: none;
+}
+
+/* ===== OVERLAY DE VÍDEO FINAL ===== */
+
+#video-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: black;
+  z-index: 999999;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+#video-overlay.show {
+  opacity: 1;
+}
+
+#video-final {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}

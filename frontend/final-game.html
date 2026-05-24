@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>A Batalha Final</title>
+    <link rel="stylesheet" href="assets/css/final-game.css" />
+    <link rel="icon" type="image/gif" href="assets/images/boss-final.gif">
+  </head>
+  <body>
+    <img src="assets/images/fundo.png" id="cenario" />
+    <div id="boss-hp-bar"><div id="boss-hp-fill"></div></div>
+    <button id="pause-button">❚❚</button>
+    <div class="painel-vidas" id="painel-vermelho">
+      <div id="vidas-vermelho">
+        <img src="assets/images/vida.png" />
+        <img src="assets/images/vida.png" />
+        <img src="assets/images/vida.png" />
+      </div>
+    </div>
+    <div id="game-root">
+      <div id="p1">
+        <img src="assets/images/mago-azul-parado.gif" id="magoVermelho" />
+        <div id="cabeca-container">
+          <img id="cabeca-personagem" src="" />
+        </div>
+      </div>
+      <div id="boss">
+        <img src="assets/images/monster.gif" id="bossImg" alt="Boss" />
+      </div>
+      <div id="cutscene-overlay" class="hidden">
+        <div class="speech-bubble" id="cutscene-bubble-mago">
+          Cadê o Cthulhu?
+        </div>
+        <div class="speech-bubble bubble-boss" id="cutscene-bubble-boss">
+          Eu estou aqui!!! HAHAHAHAHA
+        </div>
+        <div id="cutscene-mago">
+          <img
+            src="assets/images/mago-azul-correndo.gif"
+            class="sprite"
+            id="cutscene-mago-sprite"
+          />
+          <div class="cabeca-cut">
+            <img id="cutscene-cabeca-img" src="" />
+          </div>
+        </div>
+        <div id="cutscene-boss" style="opacity: 0">
+          <img src="assets/images/monster.gif" alt="Boss" />
+        </div>
+      </div>
+    </div>
+
+    <!-- FORA DO GAME-ROOT -->
+    <div id="start-screen">
+      <img src="assets/images/fundo.png" id="menu-bg" />
+      <div id="start-box">
+        <h1>ANTES DE COMEÇAR...<br />CONTROLES BÁSICOS:</h1>
+        <div id="controls-container">
+          <div class="control-card">
+            <div class="keys">
+              <div class="top-key">W</div>
+              <div class="bottom-keys">
+                <div>A</div>
+                <div>S</div>
+                <div>D</div>
+              </div>
+            </div>
+            <p>ANDAR</p>
+          </div>
+          <div class="control-card segundo">
+            <div class="single-key">F</div>
+            <p>ATIRAR</p>
+          </div>
+        </div>
+        <button id="start-button">Pressione 'ESPAÇO' para Iniciar</button>
+      </div>
+    </div>
+
+    <div id="transition-fade">
+      <div id="prepare-text">PREPARE-SE...</div>
+    </div>
+
+    <div id="pause-overlay">
+      <div id="pause-menu">
+        <h2>Jogo Pausado</h2>
+        <button id="resume-button">Retomar</button>
+        <button id="exit-button">Sair do Jogo</button>
+      </div>
+    </div>
+
+    <div id="boss-dead-overlay">
+      <img src="assets/images/knockout.png" alt="Boss Derrotado" />
+    </div>
+
+    <div id="game-over-overlay">
+      <img src="assets/images/game-over.png" alt="Game Over" />
+      <button id="restart-button">Tentar Novamente</button>
+    </div>
+
+    <div id="victory-overlay">
+      <div id="victory-box">
+        <h1>Você conseguiu salvar o Carlinhos!!!</h1>
+        <img src="assets/images/carlinhos.png" alt="Vitória" />
+        <button id="continue-button">Continuar</button>
+      </div>
+    </div>
+
+    <div id="video-overlay">
+      <video id="video-final" src="assets/videos/video-final.mp4" playsinline></video>
+    </div>
+  </body>
+  <script src="js/final-game.js"></script>
+</html>
