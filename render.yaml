@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: super-compose-bros
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false   # preencher manualmente no dashboard do Render
+      - key: NODE_ENV
+        value: production

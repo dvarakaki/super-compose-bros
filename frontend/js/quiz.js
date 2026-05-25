@@ -64,7 +64,7 @@ function saveProgress(fase, score, total) {
     try {
       const user = JSON.parse(sessionStorage.getItem('scb_user') || 'null');
       if (user && user.id) {
-        fetch('http://localhost:3000/api/score', {
+        fetch('/api/score', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: user.id, score: scoreGain }),

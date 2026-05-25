@@ -383,7 +383,7 @@
     totalBadge.textContent  = '';
 
     try {
-      const res  = await fetch('http://localhost:3000/api/ranking');
+      const res  = await fetch(`/api/ranking?room=${encodeURIComponent(user?.room || 'default')}`);
       const data = await res.json();
 
       loadingEl.style.display = 'none';
