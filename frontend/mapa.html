@@ -2,7 +2,6 @@
 <html lang="pt-BR">
 
 <head>
-  <link rel="icon" type="image/gif" href="assets/images/boss-final.gif">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -15,18 +14,18 @@
       user-select: none;
     }
 
-    img {
-      user-select: none;
-      -webkit-user-drag: none;
-      pointer-events: none;
-    }
-
     body {
       width: 100vw;
       height: 100vh;
       overflow: hidden;
       background: black;
       font-family: 'Press Start 2P', monospace;
+    }
+
+    img {
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
     }
 
     /* =========================================================
@@ -557,7 +556,7 @@
       left: 85%;
       top: 50%;
       transform: translate(-50%, -50%);
-      background-image: url('assets/images/portal.png');
+      background-image: url('assets/images/polvo_pirata.png');
       background-size: contain;
       background-repeat: no-repeat;
       animation: pulsePortal 2.2s ease-in-out infinite;
@@ -1484,7 +1483,7 @@
   <!-- vídeo do polvo em tela cheia que toca ao pressionar START (sem som, sem barras pretas) -->
   <video id="polvoVideo" playsinline muted
     style="display:none; position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:300; background:black;">
-    <!-- videoPolvoBatentonaTela.mp4 não disponível — elemento mantido para compatibilidade -->
+    <source src="assets/videos/video-final.mp4" type="video/mp4">
   </video>
   <!-- overlay de câmera que desce mostrando a imagem de fundo inicial -->
   <div id="cameraOverlay" class="camera-overlay"></div>
@@ -1849,16 +1848,6 @@
     let boat = document.getElementById('boat');
     let phaseElements = document.querySelectorAll('#peixesFases > div');
     function initPhaseSystem() {
-      // Sincroniza estado de fases completadas com o localStorage do quiz
-      try {
-        const progress = JSON.parse(localStorage.getItem('scb_progress') || '{}');
-        phases.forEach((phase, idx) => {
-          if (progress[`completed_${idx + 1}`]) {
-            phase.completed = true;
-          }
-        });
-      } catch (_) {}
-
       // fazer o barco aparecer vindo da esquerda
       boatContainer.classList.add('visible');
       moveBoatToPhase(0);
@@ -2007,13 +1996,13 @@
         // se for portal, navegar para a FaseFinal (pasta "The boys")
         if (phases[currentPhaseIndex] && phases[currentPhaseIndex].isPortal) {
           // caminho com espaço codificado
-          window.location.href = '../index.html';
+          window.location.href = 'final-game.html';
           return;
         }
-        // iniciar fase: abre a tela de conteúdo (livro de slides)
+        // iniciar fase: por enquanto apenas fechar e marcar completada
         hidePhaseOverlay();
-        buildPhaseMap();
-        startPhaseScreen(currentPhaseIndex);
+        buildPhaseMap(); // atualizar mapa
+        // você pode disparar a lógica real da fase aqui
       }
     });
 
@@ -2062,6 +2051,85 @@
     }
 
     const phaseBookSlides = {
+      felipe: [
+        {
+          title: 'Estrutura do docker-compose.yml',
+          topics: [
+            'Sintaxe YAML',
+            'Services',
+            'Estrutura básica',
+            'Versionamento'
+          ]
+        },
+        {
+          title: 'O que é o docker-compose.yml',
+          topics: [
+            'Define múltiplos containers em um único arquivo',
+            'Organiza serviços, portas, volumes e variáveis',
+            'Evita rodar vários comandos Docker manualmente'
+          ]
+        },
+        {
+          title: 'Sintaxe YAML',
+          code: `services:
+  app:
+    image: nginx`,
+          topics: [
+            'Espaços definem hierarquia',
+            'Não usar tab',
+            'chave: valor',
+            'Listas usam -'
+          ]
+        },
+        {
+          title: 'Bloco services',
+          code: `services:
+  app:
+    image: nginx
+  db:
+    image: postgres`,
+          topics: [
+            'Cada item em services representa um container',
+            'O nome do serviço identifica o container no Compose',
+            'Serviços podem se comunicar entre si'
+          ]
+        },
+        {
+          title: 'Configurações principais de um serviço',
+          code: `services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development`,
+          topics: [
+            'image: usa imagem pronta',
+            'build: constrói imagem local',
+            'ports: mapeia portas',
+            'environment: variáveis de ambiente',
+            'volumes: persistência de dados'
+          ]
+        },
+        {
+          title: 'Versionamento e estrutura final',
+          code: `services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=123456`,
+          topics: [
+            'version era comum em exemplos antigos',
+            'Hoje não é obrigatório',
+            'A estrutura essencial é services + serviços configurados'
+          ]
+        }
+      ],
       arakaki: [
         {
           title: 'Services, Build e Images',
@@ -2183,7 +2251,6 @@
     function fadeOut(duration = 1000) {
       return new Promise(resolve => {
         const fade = document.createElement('div');
-        fade.id = 'scb-fade-overlay';
         fade.style.cssText = `
           position: fixed;
           inset: 0;
@@ -2203,7 +2270,7 @@
 
     function fadeIn(duration = 900) {
       return new Promise(resolve => {
-        const fade = document.getElementById('scb-fade-overlay');
+        const fade = document.querySelector('[style*="z-index: 650"]');
         if (fade) {
           fade.style.opacity = '0';
           setTimeout(() => {
@@ -2219,43 +2286,26 @@
     function playPeixeVideo() {
       return new Promise(resolve => {
 
-        function finish() {
-          peixeCameraVideo.style.transition = 'opacity 0.4s ease';
-          peixeCameraVideo.style.opacity = '0';
-          setTimeout(() => {
-            peixeCameraVideo.style.display = 'none';
-            resolve();
-          }, 400);
-        }
-
         peixeCameraVideo.style.display = 'block';
         peixeCameraVideo.style.opacity = '1';
+
         peixeCameraVideo.currentTime = 0;
+        peixeCameraVideo.play().catch(() => { });
 
-        const playPromise = peixeCameraVideo.play();
+        const onEnded = () => {
 
-        if (playPromise !== undefined) {
-          playPromise.catch(() => {
-            // autoplay bloqueado ou erro — pula o vídeo
-            peixeCameraVideo.style.display = 'none';
-            resolve();
-          });
-        }
-
-        // fallback: se o vídeo não tiver src válida ou durar 0s
-        peixeCameraVideo.addEventListener('error', () => {
-          peixeCameraVideo.style.display = 'none';
-          resolve();
-        }, { once: true });
-
-        peixeCameraVideo.addEventListener('ended', () => {
-          peixeCameraVideo.style.transition = 'opacity 1s ease';
+          peixeCameraVideo.style.transition = 'opacity 4s ease';
           peixeCameraVideo.style.opacity = '0';
+
           setTimeout(() => {
             peixeCameraVideo.style.display = 'none';
+            peixeCameraVideo.removeEventListener('ended', onEnded);
             resolve();
-          }, 1000);
-        }, { once: true });
+          }, 4000);
+
+        };
+
+        peixeCameraVideo.addEventListener('ended', onEnded, { once: true });
       });
     }
 
@@ -2550,7 +2600,7 @@
       if (ev.target.matches('.phase-close')) hidePhaseOverlay();
       if (ev.target.matches('.phase-start')) {
         if (phases[currentPhaseIndex] && phases[currentPhaseIndex].isPortal) {
-          window.location.href = '../index.html';
+          window.location.href = 'final-game.html';
           return;
         }
         hidePhaseOverlay();
@@ -2580,9 +2630,7 @@
 
     if (phaseQuizBtn) {
       phaseQuizBtn.addEventListener('click', () => {
-        // phaseBookPhaseIndex: 0-based (fase 1 = index 0, fase 2 = index 1, ...)
-        const faseNum = phaseBookPhaseIndex + 1;
-        window.location.href = `quiz.html?fase=${faseNum}`;
+        // Quiz sera ligado depois.
       });
     }
   </script>
