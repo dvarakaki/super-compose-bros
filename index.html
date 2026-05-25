@@ -244,6 +244,20 @@
         </div>
       </div>
 
+      <div class="input-group">
+        <label for="room-input">Código da sala</label>
+        <div class="input-wrapper">
+          <input
+            type="text"
+            id="room-input"
+            placeholder="ex: turma2025"
+            maxlength="50"
+            autocomplete="off"
+          />
+          <i class="fa-solid fa-door-open"></i>
+        </div>
+      </div>
+
       <button class="btn-entrar" id="btn-entrar">
         <i class="fa-solid fa-right-to-bracket"></i>
         Entrar
@@ -286,10 +300,11 @@
     }
   })();
 
-  const input   = document.getElementById('username-input');
-  const btn     = document.getElementById('btn-entrar');
-  const errorEl = document.getElementById('error-msg');
-  const errorTx = document.getElementById('error-text');
+  const input     = document.getElementById('username-input');
+  const roomInput = document.getElementById('room-input');
+  const btn       = document.getElementById('btn-entrar');
+  const errorEl   = document.getElementById('error-msg');
+  const errorTx   = document.getElementById('error-text');
 
   function showError(msg) {
     errorTx.textContent = msg;
@@ -302,10 +317,17 @@
 
   async function entrar() {
     const username = input.value.trim();
+    const room     = roomInput.value.trim();
 
     if (!username) {
       showError('Informe um username para continuar.');
       input.focus();
+      return;
+    }
+
+    if (!room) {
+      showError('Informe o código da sala para continuar.');
+      roomInput.focus();
       return;
     }
 
@@ -314,10 +336,10 @@
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...';
 
     try {
-      const res = await fetch('http://localhost:3000/api/login', {
+      const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username, room }),
       });
 
       if (!res.ok) {
@@ -329,7 +351,7 @@
 
       // Salva o usuário na sessionStorage e redireciona para o mapa
       sessionStorage.setItem('scb_user', JSON.stringify(user));
-      window.location.href = 'mapa.html';
+      window.location.href = 'frontend/mapa.html';
 
     } catch (err) {
       showError(err.message || 'Não foi possível conectar ao servidor.');
@@ -341,6 +363,11 @@
   btn.addEventListener('click', entrar);
 
   input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') entrar();
+    if (errorEl.classList.contains('show')) hideError();
+  });
+
+  roomInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') entrar();
     if (errorEl.classList.contains('show')) hideError();
   });
