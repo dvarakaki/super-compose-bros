@@ -358,11 +358,17 @@
     }
   })();
 
-  // Usuário logado
+  // Usuário logado — redireciona pro login se não tiver sessão
   const user = JSON.parse(sessionStorage.getItem('scb_user') || 'null');
+  if (!user || !user.room) {
+    window.location.href = '../index.html';
+  }
   if (user) {
     document.getElementById('player-badge').style.display = 'flex';
     document.getElementById('player-name').textContent = user.username;
+    // Mostra a sala no subtitle
+    const subtitle = document.querySelector('.ranking-header-titles .subtitle');
+    if (subtitle) subtitle.textContent = `Sala: ${user.room}`;
   }
 
   const body        = document.getElementById('ranking-body');
