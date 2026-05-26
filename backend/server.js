@@ -43,8 +43,6 @@ app.post('/api/login', async (req, res) => {
     const result = await pool.query(
       `INSERT INTO users (username, room)
        VALUES ($1, $2)
-       ON CONFLICT (username, room)
-       DO UPDATE SET username = EXCLUDED.username
        RETURNING id, username, score, room, is_admin`,
       [name, roomCode]
     );
@@ -69,10 +67,10 @@ app.get('/api/ranking', async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT username, score
+      `SELECT id, username, score
        FROM users
        WHERE room = $1
-       ORDER BY score DESC`,
+       ORDER BY score DESC, id ASC`,
       [roomCode]
     );
 

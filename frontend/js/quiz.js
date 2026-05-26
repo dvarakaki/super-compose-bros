@@ -38,12 +38,24 @@ function getProgress() {
 function saveProgress(fase, score, total) {
   const progress = getProgress();
   const pct = Math.round((score / total) * 100);
-  const isNewBest = !progress[fase] || pct > (progress[fase].pct || 0);
-  const scoreGain = isNewBest ? score - (progress[fase] ? progress[fase].score : 0) : 0;
+  const previousPhase = progress[fase];
+  const isFirstCompletion = !progress[`completed_${fase}`];
+  const isNewBest = !previousPhase || pct > (previousPhase.pct || 0);
+  const scoreGain = isFirstCompletion ? score : 0;
 
   // Salva resultado da fase (guarda o melhor score)
   if (isNewBest) {
-    progress[fase] = { pct, score, total, completedAt: Date.now() };
+    progress[fase] = {
+      ...previousPhase,
+      pct,
+      score,
+      total,
+      completedAt: previousPhase?.completedAt || Date.now()
+    };
+  }
+
+  if (isFirstCompletion && progress[fase]) {
+    progress[fase].scoreCountedAt = Date.now();
   }
 
   // Marca fase como completada para sincronizar com o mapa

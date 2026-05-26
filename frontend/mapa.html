@@ -1022,7 +1022,7 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      margin-top: 150px;
+      margin-top: 50px;
     }
 
     .phase-start,
@@ -1073,6 +1073,11 @@
         0 0 24px rgba(64, 180, 255, 0.35);
     }
 
+    .phase-start:focus,
+    .phase-retry-quiz:focus {
+      outline: none;
+    }
+
     /* FECHAR */
     .phase-close {
       position: absolute;
@@ -1116,12 +1121,12 @@
     }
 
     /* =========================================================
-       BOTÃO RANKING
+       BOTÃO VOLTAR LOGIN
     ========================================================= */
-    #rankingBtn {
+    #loginBtn {
       position: fixed;
       top: 18px;
-      right: 20px;
+      left: 20px;
       z-index: 9998;
       padding: 10px 18px;
       background: rgba(0, 0, 0, 0.75);
@@ -1136,17 +1141,17 @@
       display: none;
     }
 
-    #rankingBtn.visible {
+    #loginBtn.visible {
       display: block;
     }
 
-    #rankingBtn:hover {
+    #loginBtn:hover {
       background: rgba(168, 126, 255, 0.18);
       transform: translateY(-2px);
       box-shadow: 0 0 22px rgba(168, 126, 255, 0.6);
     }
 
-    #rankingBtn:active {
+    #loginBtn:active {
       transform: translateY(1px);
     }
 
@@ -1499,9 +1504,8 @@
       </div>
     </div>
   </div>
-  <!-- botão ranking fixo no canto superior direito -->
-  <a href="ranking.html" id="rankingBtn" title="Ver Ranking">
-    🏆 RANKING
+  <a href="../index.html" id="loginBtn" title="Voltar para o login">
+    VOLTAR LOGIN
   </a>
   <!-- scanlines sobre tudo -->
   <div class="scanlines"></div>
@@ -1738,7 +1742,7 @@
       document.getElementById('phaseScreenContainer').classList.remove('active');
       cameraOverlay.classList.add('active');
       if (peixesFases) peixesFases.classList.add('visible');
-      document.getElementById('rankingBtn').classList.add('visible');
+      document.getElementById('loginBtn').classList.add('visible');
       iniciarMusica();
       initPhaseSystem();
     }
@@ -1930,7 +1934,7 @@
       setTimeout(() => {
         cameraOverlay.classList.add('active');
         if (peixesFases) peixesFases.classList.add('visible');
-        document.getElementById('rankingBtn').classList.add('visible');
+        document.getElementById('loginBtn').classList.add('visible');
         initPhaseSystem();
       }, 1400);
     }, { once: true });
@@ -1998,13 +2002,16 @@
     // navegação com setas
     document.addEventListener('keydown', (e) => {
       if (boatContainer.style.display === 'none' || peixesFases.classList.contains('visible') === false) return;
+      if (document.getElementById('phaseOverlay')?.classList.contains('active')) return;
+      if (quizOverlay.classList.contains('active') || isInPhaseScreen) return;
+      const key = e.key.toLowerCase();
 
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || key === 'a' || key === 'w') {
         if (currentPhaseIndex > 0) {
           if (moveBoatToPhase(currentPhaseIndex - 1)) updatePhaseUI();
         }
         e.preventDefault();
-      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || key === 'd' || key === 's') {
         e.preventDefault();
         // avançar para a próxima fase (permitido sempre)
         if (currentPhaseIndex < phases.length - 1) {
@@ -2112,8 +2119,6 @@
       retryQuizBtn.classList.toggle('visible', Boolean(info.completed && !info.isPortal));
       buildPhaseMap();
       phaseOverlay.classList.add('active');
-      const startBtnPhase = phaseOverlay.querySelector('.phase-start');
-      startBtnPhase && startBtnPhase.focus();
     }
 
     function hidePhaseOverlay() {

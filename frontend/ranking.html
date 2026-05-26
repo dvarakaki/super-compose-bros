@@ -109,6 +109,30 @@
       color: #c084fc;
     }
 
+    .btn-map {
+      background: rgba(34,211,238,0.08);
+      border: 1px solid rgba(34,211,238,0.25);
+      border-radius: 10px;
+      color: #67e8f9;
+      font-size: 0.76rem;
+      padding: 0.45rem 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .btn-map:hover {
+      background: rgba(34,211,238,0.16);
+      border-color: rgba(34,211,238,0.45);
+      color: #cffafe;
+    }
+
     .btn-refresh i.spinning { animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -333,6 +357,10 @@
         Logado como <span id="player-name">—</span>
       </div>
       <div class="total-badge" id="total-badge"></div>
+      <a href="mapa.html" class="btn-map">
+        <i class="fa-solid fa-map"></i>
+        Voltar ao mapa
+      </a>
     </div>
 
   </div>
@@ -409,7 +437,7 @@
         const medal    = medals[i] ?? '';
         const initials = player.username.slice(0, 2);
         const barWidth = maxScore > 0 ? Math.max(4, Math.round((player.score / maxScore) * 100)) : 4;
-        const isMe     = user && user.username === player.username;
+        const isMe     = user && user.id === player.id;
 
         const row = document.createElement('div');
         row.className = `rank-row ${posClass}`;
