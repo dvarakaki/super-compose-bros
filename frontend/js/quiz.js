@@ -473,21 +473,15 @@ function renderReport() {
     `;
   }).join('');
 
-  // Botões — próxima fase, boss final ou voltar ao mapa
-  const isBossNext = faseAtual + 1 === TOTAL_FASES;
+  // Botões: voltar ao mapa ou refazer
   const botoesHtml = temProxima
     ? `<div class="btn-row">
-        <button class="btn btn-primary" onclick="irParaProximaFase()">
-          <i class="fa-solid fa-${isBossNext ? 'skull-crossbones' : 'chevron-right'}"></i> ${isBossNext ? 'Enfrentar o Boss!' : 'Próxima Fase'}
+        <button class="btn btn-primary" onclick="window.location.href='mapa.html'">
+          <i class="fa-solid fa-map"></i> Ver mapa de fases
         </button>
         <button class="btn btn-secondary" onclick="restartQuiz()">
           <i class="fa-solid fa-rotate-left"></i> Refazer
         </button>
-      </div>
-      <div style="text-align:center;margin-top:0.8rem">
-        <a href="mapa.html" style="font-size:0.8rem;color:#94a3b8;text-decoration:none">
-          <i class="fa-solid fa-map" style="margin-right:4px"></i>Ver mapa de fases
-        </a>
       </div>`
     : `<div class="btn-row">
         <button class="btn btn-primary" onclick="window.location.href='mapa.html'">

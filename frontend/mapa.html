@@ -1016,11 +1016,18 @@
         0 2px 4px rgba(0, 0, 0, 0.85);
     }
 
-    /* BOTAO */
-    .phase-start {
+    /* BOTOES */
+    .phase-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 150px;
+    }
+
+    .phase-start,
+    .phase-retry-quiz {
       width: 100%;
       height: 58px;
-      margin-top: 150px;
       border: 3px solid rgba(255, 232, 190, .45);
       border-radius: 14px;
       background:
@@ -1038,7 +1045,21 @@
         inset 0 1px 0 rgba(255, 255, 255, .25);
     }
 
-    .phase-start:hover {
+    .phase-retry-quiz {
+      display: none;
+      border-color: rgba(255, 255, 255, .55);
+      background:
+        linear-gradient(180deg,
+          rgba(116, 224, 162, .94),
+          rgba(27, 126, 84, .96));
+    }
+
+    .phase-retry-quiz.visible {
+      display: block;
+    }
+
+    .phase-start:hover,
+    .phase-retry-quiz:hover {
       transform: translateY(-4px);
 
       background:
@@ -1374,6 +1395,26 @@
       color: #fff8d8;
     }
 
+    .quiz-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 900;
+      display: none;
+      background: rgba(0, 0, 0, .86);
+      backdrop-filter: blur(5px);
+    }
+
+    .quiz-overlay.active {
+      display: block;
+    }
+
+    .quiz-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #020617;
+    }
+
     #boatFases {
       position: fixed;
       z-index: 200;
@@ -1522,7 +1563,6 @@
         <h2>Parabens!</h2>
         <p>Voce terminou de ler os slides.</p>
         <div class="phase-finish-actions">
-          <button id="phaseReturnMapBtn" type="button">Voltar para o mapa</button>
           <button id="phaseQuizBtn" type="button">Fazer quiz</button>
         </div>
       </div>
@@ -1533,6 +1573,9 @@
     </div>
     <img id="boatFases" src="assets/images/barcoFases.png"
       style="position:absolute; width:100px; height:100px; object-fit:contain;">
+  </div>
+  <div id="quizOverlay" class="quiz-overlay" aria-hidden="true">
+    <iframe id="quizFrame" class="quiz-frame" title="Quiz da fase"></iframe>
   </div>
   <script>
     /* =====================================================
@@ -1848,6 +1891,7 @@
     let boat = document.getElementById('boat');
     let phaseElements = document.querySelectorAll('#peixesFases > div');
     function initPhaseSystem() {
+      syncPhaseProgress();
       // fazer o barco aparecer vindo da esquerda
       boatContainer.classList.add('visible');
       moveBoatToPhase(0);
@@ -1945,12 +1989,27 @@
           <p class="phase-score">Pontuação: <span id="phaseScore">0</span></p>
           <p class="phase-desc" id="phaseDesc">Selecione uma fase para começar...</p>
         </div>
-        <button class="phase-start">▶ COMEÇAR ◀</button>
+        <div class="phase-actions">
+          <button class="phase-start">▶ COMEÇAR ◀</button>
+          <button class="phase-retry-quiz" type="button">REFAZER QUIZ</button>
+        </div>
       </div>
     `;
     document.body.appendChild(phaseOverlay);
 
+    function syncPhaseProgress() {
+      try {
+        const progress = JSON.parse(localStorage.getItem('scb_progress') || '{}');
+        phases.forEach((phase, idx) => {
+          const saved = progress[String(idx + 1)];
+          phase.completed = Boolean(progress[`completed_${idx + 1}`] || saved?.completed || saved?.pct >= 100);
+          phase.score = saved?.score || phase.score || 0;
+        });
+      } catch (_) { }
+    }
+
     function buildPhaseMap() {
+      syncPhaseProgress();
       const mapEl = document.getElementById('phaseMap');
       mapEl.innerHTML = '';
       phases.forEach((phase, idx) => {
@@ -1977,6 +2036,7 @@
       const notaEl = phaseOverlay.querySelector('#phaseNota');
       const scoreEl = phaseOverlay.querySelector('#phaseScore');
       const descEl = phaseOverlay.querySelector('#phaseDesc');
+      const retryQuizBtn = phaseOverlay.querySelector('.phase-retry-quiz');
 
       titleEl.textContent = info.isPortal ? '[ PORTAL FINAL ]' : `[ FASE ${phaseIndex + 1} ]`;
       notaEl.textContent = info.isPortal ? 'CTHULHU' : `${info.name.toUpperCase()}`;
@@ -1988,6 +2048,7 @@
         descEl.textContent = `Ajude a Libertar: ${info.name} Para descobrir os segrados do Docker! Clique em COMEÇAR.`;
       }
 
+      retryQuizBtn.classList.toggle('visible', Boolean(info.completed && !info.isPortal));
       buildPhaseMap();
       phaseOverlay.classList.add('active');
       const startBtnPhase = phaseOverlay.querySelector('.phase-start');
@@ -2001,6 +2062,9 @@
     // fechar/começar
     phaseOverlay.addEventListener('click', (ev) => {
       if (ev.target.matches('.phase-close')) hidePhaseOverlay();
+      if (ev.target.matches('.phase-retry-quiz')) {
+        openQuizOverlay(currentPhaseIndex + 1);
+      }
       if (ev.target.matches('.phase-start')) {
         // se for portal, navegar para a FaseFinal (pasta "The boys")
         if (phases[currentPhaseIndex] && phases[currentPhaseIndex].isPortal) {
@@ -2036,8 +2100,9 @@
     const phaseBookText = document.getElementById('phaseBookText');
     const phaseBookFlash = document.getElementById('phaseBookFlash');
     const phaseFinishModal = document.getElementById('phaseFinishModal');
-    const phaseReturnMapBtn = document.getElementById('phaseReturnMapBtn');
     const phaseQuizBtn = document.getElementById('phaseQuizBtn');
+    const quizOverlay = document.getElementById('quizOverlay');
+    const quizFrame = document.getElementById('quizFrame');
 
     let boatPhaseX = window.innerWidth / 2;
     let boatPhaseY = window.innerHeight / 2;
@@ -2051,6 +2116,44 @@
     let phaseBookPageIndex = 0;
     let phaseBookAnimating = false;
 
+    function openQuizOverlay(faseNum) {
+      quizFrame.src = `quiz.html?fase=${faseNum}`;
+      quizOverlay.classList.add('active');
+      quizOverlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeQuizOverlay() {
+      quizOverlay.classList.remove('active');
+      quizOverlay.setAttribute('aria-hidden', 'true');
+      quizFrame.removeAttribute('src');
+      hidePhaseOverlay();
+      hidePhaseFinishModal();
+      closePhaseScreen();
+      syncPhaseProgress();
+      updatePhaseUI();
+      buildPhaseMap();
+    }
+
+    function attachQuizMapReturnHandler() {
+      try {
+        const doc = quizFrame.contentDocument;
+        if (!doc || doc.__mapReturnHandlerAttached) return;
+        doc.__mapReturnHandlerAttached = true;
+        doc.addEventListener('click', (ev) => {
+          const target = ev.target.closest('a[href*="mapa.html"], button');
+          if (!target) return;
+
+          const href = target.getAttribute('href') || '';
+          const onclick = target.getAttribute('onclick') || '';
+          if (!href.includes('mapa.html') && !onclick.includes('mapa.html')) return;
+
+          ev.preventDefault();
+          ev.stopImmediatePropagation();
+          closeQuizOverlay();
+        }, true);
+      } catch (_) { }
+    }
+
     function canAccessPhase(phaseIndex) {
       const phase = phases[phaseIndex];
       if (!phase) return false;
@@ -2060,6 +2163,44 @@
     }
 
     const phaseBookSlides = {
+      edu: [
+        {
+          title: 'O que é Docker Compose?',
+          topics: [
+            'Docker Compose é uma ferramenta para definir e rodar aplicações multi-container com um único arquivo de configuração',
+            'Arquivo padrão: docker-compose.yml (formato YAML, legível por humanos e baseado em indentação)',
+            'Substitui sequências longas de docker run por uma configuração declarativa',
+            'Um único comando sobe tudo: docker-compose up'
+          ]
+        },
+        {
+          title: 'Por que usar? Problema que resolve',
+          topics: [
+            'Sem Compose: docker run manual para cada container, um de cada vez',
+            'Com Compose: todos os serviços declarados em um arquivo e orquestrados juntos',
+            'Resolve múltiplos containers que precisam trabalhar juntos: app + banco + cache + broker',
+            'Docker CLI: imperativo, manual e propenso a erro',
+            'Compose: declarativo, reproduzível e versionável'
+          ]
+        },
+        {
+          title: 'Exemplo Prático + Comandos Básicos',
+          code: `version: '3'
+services:
+  web:
+    image: nginx
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: secret`,
+          topics: [
+            'docker-compose up: cria e inicia todos os containers',
+            'docker-compose up -d: roda em background (detached)',
+            'docker-compose down: para e remove os containers',
+            'Dica: compose.yaml também é aceito nas versões mais recentes'
+          ]
+        }
+      ],
       felipe: [
         {
           title: 'Estrutura do docker-compose.yml',
@@ -2631,15 +2772,23 @@
       });
     }
 
-    if (phaseReturnMapBtn) {
-      phaseReturnMapBtn.addEventListener('click', () => {
-        completePhaseAndReturnToMap();
+    if (phaseQuizBtn) {
+      phaseQuizBtn.addEventListener('click', () => {
+        const faseNum = phaseBookPhaseIndex + 1;
+        openQuizOverlay(faseNum);
       });
     }
 
-    if (phaseQuizBtn) {
-      phaseQuizBtn.addEventListener('click', () => {
-        // Quiz sera ligado depois.
+    if (quizFrame) {
+      quizFrame.addEventListener('load', () => {
+        try {
+          const framePath = quizFrame.contentWindow.location.pathname;
+          if (framePath.endsWith('/mapa.html')) {
+            closeQuizOverlay();
+          } else {
+            attachQuizMapReturnHandler();
+          }
+        } catch (_) { }
       });
     }
   </script>
