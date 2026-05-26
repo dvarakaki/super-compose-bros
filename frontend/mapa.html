@@ -1468,7 +1468,7 @@
     }
 
     #boatFases:hover {
-      transform: scale(1.08);
+      filter: drop-shadow(0 0 18px #c5a6ff);
     }
 
     #boatFases.active {
@@ -2171,6 +2171,7 @@
     const boatPhaseSize = 100;
     const phaseKeys = { w: false, a: false, s: false, d: false };
     let boatPhaseActive = false;
+    let boatPhaseDirection = 1;
     let hoveredButton = null;
     let isInPhaseScreen = false;
     let phaseBookPhaseIndex = 0;
@@ -2193,6 +2194,15 @@
       syncPhaseProgress();
       updatePhaseUI();
       buildPhaseMap();
+      restoreMapKeyboardFocus();
+    }
+
+    function restoreMapKeyboardFocus() {
+      setTimeout(() => {
+        window.focus();
+        if (!document.body.hasAttribute('tabindex')) document.body.tabIndex = -1;
+        document.body.focus({ preventScroll: true });
+      }, 0);
     }
 
     function attachQuizMapReturnHandler() {
@@ -2456,6 +2466,34 @@ services:
             'Resumo final'
           ]
         }
+      ],
+      rafa: [
+        {
+          title: 'Comandos basicos do ciclo de vida',
+          topics: [
+            'docker compose up: subindo o ambiente (-d para background)',
+            'docker compose down: encerrando e limpando recursos',
+            'docker compose ps: verificando o status dos servicos',
+            'docker compose logs: monitoramento e debug'
+          ]
+        },
+        {
+          title: 'Comandos de manutencao',
+          topics: [
+            'docker compose exec: executando comandos em containers ativos',
+            'docker compose build: reconstruindo imagens apos alteracoes',
+            'docker compose restart: reinicializacao rapida'
+          ]
+        },
+        {
+          title: 'Organizacao e boas praticas',
+          topics: [
+            'Docker Compose Override: diferenciando desenvolvimento de producao',
+            'Uso de .env: seguranca e portabilidade',
+            'Profiles: iniciando apenas o necessario',
+            'Imutabilidade: nao salvar dados dentro do container, reforcando o uso de volumes'
+          ]
+        }
       ]
     };
 
@@ -2670,6 +2708,7 @@ services:
 
       boatPhaseX = window.innerWidth / 2 - boatPhaseSize / 2;
       boatPhaseY = window.innerHeight / 2 - boatPhaseSize / 2;
+      boatPhaseDirection = 1;
 
       boatPhaseActive = false;
 
@@ -2709,6 +2748,7 @@ services:
 
       boatFases.style.left = boatPhaseX + 'px';
       boatFases.style.top = boatPhaseY + 'px';
+      boatFases.style.transform = `translate(-50%, -50%) scaleX(${boatPhaseDirection})`;
 
       const buttons = document.querySelectorAll('.phase-nav-btn');
       let nextHoveredButton = null;
@@ -2769,6 +2809,7 @@ services:
       }
       if (e.key.toLowerCase() === 'a' || e.key === 'ArrowLeft') {
         phaseKeys.a = true;
+        boatPhaseDirection = -1;
         e.preventDefault();
       }
       if (e.key.toLowerCase() === 's' || e.key === 'ArrowDown') {
@@ -2777,6 +2818,7 @@ services:
       }
       if (e.key.toLowerCase() === 'd' || e.key === 'ArrowRight') {
         phaseKeys.d = true;
+        boatPhaseDirection = 1;
         e.preventDefault();
       }
 

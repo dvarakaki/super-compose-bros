@@ -404,7 +404,7 @@ function executarCutscene(onFinish) {
   cutsceneMago.style.left = "-300px";
   cutsceneMago.style.bottom = chaoBottom + "px";
   cutsceneMago.style.transition = "none";
-  cutsceneMagoSprite.src = "assets/images/mago-azul-parado.gif";
+  cutsceneMagoSprite.src = "assets/images/Mago-azul-parado.gif";
 
   setTimeout(() => {
     cutsceneMago.style.transition = "left 1.8s cubic-bezier(.17,.89,.32,1.28)";
@@ -413,7 +413,7 @@ function executarCutscene(onFinish) {
 
   // Fase 2 — Mago anda para a direita e volta
   setTimeout(() => {
-    cutsceneMagoSprite.src = "assets/images/mago-azul-correndo.gif";
+    cutsceneMagoSprite.src = "assets/images/Mago-azul-correndo.gif";
     cabecaContCut.style.left = cabecaAleatoria.leftDir;
     cabecaContCut.style.transform = cabecaAleatoria.espelhar
       ? "scaleX(-1)"
@@ -427,7 +427,7 @@ function executarCutscene(onFinish) {
 
     // Volta para a esquerda
     setTimeout(() => {
-      cutsceneMagoSprite.src = "assets/images/mago-azul-correndo-esquerdo.gif";
+      cutsceneMagoSprite.src = "assets/images/Mago-azul-correndo-esquerdo.gif";
       cabecaContCut.style.left = cabecaAleatoria.leftEsq;
       cabecaContCut.style.transform = cabecaAleatoria.espelhar
         ? "scaleX(1)"
@@ -438,7 +438,7 @@ function executarCutscene(onFinish) {
 
       setTimeout(() => {
         // Para, olha para a direita
-        cutsceneMagoSprite.src = "assets/images/mago-azul-parado.gif";
+        cutsceneMagoSprite.src = "assets/images/Mago-azul-parado.gif";
         cabecaContCut.style.left = cabecaAleatoria.leftDir;
         cabecaContCut.style.transform = cabecaAleatoria.espelhar
           ? "scaleX(-1)"
@@ -780,7 +780,7 @@ function morrerBoss() {
   document.removeEventListener("keydown", onKeyDown);
   document.removeEventListener("keyup", onKeyUp);
 
-  imgVermelho.src = "assets/images/mago-azul-parado.gif";
+  imgVermelho.src = "assets/images/Mago-azul-parado.gif";
 
   setTimeout(() => {
     overlay.style.display = "none";
@@ -1131,11 +1131,11 @@ function andar(tempo = 0) {
   const movendo = teclas.KeyA || teclas.KeyD;
   let srcV = movendo
     ? ultimaDirVermelho === "esq"
-      ? "assets/images/mago-azul-correndo-esquerdo.gif"
-      : "assets/images/mago-azul-correndo.gif"
+      ? "assets/images/Mago-azul-correndo-esquerdo.gif"
+      : "assets/images/Mago-azul-correndo.gif"
     : ultimaDirVermelho === "esq"
-      ? "assets/images/mago-azul-parado-esquerdo.gif"
-      : "assets/images/mago-azul-parado.gif";
+      ? "assets/images/Mago-azul-parado-esquerdo.gif"
+      : "assets/images/Mago-azul-parado.gif";
 
   if (!atacandoVermelho && imgVermelho.src.indexOf(srcV) < 0)
     imgVermelho.src = srcV;
@@ -1187,8 +1187,8 @@ function atacarVermelho() {
   somTiro.play();
   imgVermelho.src =
     ultimaDirVermelho === "esq"
-      ? "assets/images/mago-azul-atacando-esquerda.gif"
-      : "assets/images/mago-azul-atacando.gif";
+      ? "assets/images/Mago-azul-atacando-esquerda.gif"
+      : "assets/images/Mago-azul-atacando.gif";
   setTimeout(() => {
     atacandoVermelho = false;
   }, attackDuration);
@@ -1234,7 +1234,7 @@ function reproduzirVideoFinal() {
     video.addEventListener("ended", () => {
       fade.classList.add("show");
       setTimeout(() => {
-        window.location.href = "../index.html";
+        window.location.href = "../frontend/ranking.html";
       }, 900);
     });
   }, 850);
