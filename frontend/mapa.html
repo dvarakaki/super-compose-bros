@@ -1668,23 +1668,26 @@
       dialogueIndex = 0;
     }
     function typeText(text, onDone) {
+      clearInterval(typingInterval);
       isTyping = true;
       dialogueContent.textContent = '';
       dialogueCursor.style.display = 'inline-block';
-      currentFullText = text;
+      currentFullText = String(text || '');
       let i = 0;
       typingInterval = setInterval(() => {
-        dialogueContent.textContent += text[i];
+        if (i >= currentFullText.length) {
+          clearInterval(typingInterval);
+          isTyping = false;
+          if (onDone) onDone();
+          return;
+        }
+
+        dialogueContent.textContent += currentFullText[i];
         // som de digitação leve
         talkSound.currentTime = 0;
         talkSound.volume = 0.06;
         talkSound.play().catch(() => { });
         i++;
-        if (i >= text.length) {
-          clearInterval(typingInterval);
-          isTyping = false;
-          if (onDone) onDone();
-        }
       }, 32);
     }
     function skipTyping() {
