@@ -3,6 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" type="image/gif" href="assets/images/monster.gif">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <title>Docker Compose</title>
@@ -1115,6 +1116,41 @@
     }
 
     /* =========================================================
+       BOTÃO RANKING
+    ========================================================= */
+    #rankingBtn {
+      position: fixed;
+      top: 18px;
+      right: 20px;
+      z-index: 9998;
+      padding: 10px 18px;
+      background: rgba(0, 0, 0, 0.75);
+      border: 2px solid #a87eff;
+      color: #a87eff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      text-decoration: none;
+      letter-spacing: 2px;
+      box-shadow: 0 0 14px rgba(168, 126, 255, 0.35);
+      transition: background .15s, transform .1s, box-shadow .15s;
+      display: none;
+    }
+
+    #rankingBtn.visible {
+      display: block;
+    }
+
+    #rankingBtn:hover {
+      background: rgba(168, 126, 255, 0.18);
+      transform: translateY(-2px);
+      box-shadow: 0 0 22px rgba(168, 126, 255, 0.6);
+    }
+
+    #rankingBtn:active {
+      transform: translateY(1px);
+    }
+
+    /* =========================================================
        TELA DAS FASES COM BARCO
     ========================================================= */
     #phaseScreenContainer {
@@ -1463,6 +1499,10 @@
       </div>
     </div>
   </div>
+  <!-- botão ranking fixo no canto superior direito -->
+  <a href="ranking.html" id="rankingBtn" title="Ver Ranking">
+    🏆 RANKING
+  </a>
   <!-- scanlines sobre tudo -->
   <div class="scanlines"></div>
   <!-- flash branco RE4 -->
@@ -1688,7 +1728,27 @@
       }, 200);
     }
     /* iniciar primeiro diálogo após pequeno delay */
+
+    // Pula a cutscene se o jogador já visitou o mapa antes
+    function skipToMap() {
+      introScreen.classList.add('hidden');
+      mainScreen.classList.remove('visible');
+      bubbleVideo.style.display = 'none';
+      bubbleVideo.pause();
+      document.getElementById('phaseScreenContainer').classList.remove('active');
+      cameraOverlay.classList.add('active');
+      if (peixesFases) peixesFases.classList.add('visible');
+      document.getElementById('rankingBtn').classList.add('visible');
+      iniciarMusica();
+      initPhaseSystem();
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('scb_map_visited_v2')) {
+        skipToMap();
+        return;
+      }
+
       const stored = localStorage.getItem('playerName');
       setTimeout(() => {
         if (stored) {
@@ -1766,6 +1826,7 @@
     });
     // Quando o usuário confirma 'Sim', tocar o vídeo de entrada antes de seguir
     doorYes.addEventListener('click', () => {
+      localStorage.setItem('scb_map_visited_v2', '1');
       doorYes.disabled = true;
       doorNo.disabled = true;
       // exibir e tocar o vídeo de entrada
@@ -1868,9 +1929,8 @@
       // aguarda um pouco para as bolhas começarem a aparecer
       setTimeout(() => {
         cameraOverlay.classList.add('active');
-        // mostrar peixinhos quando a câmera descer
         if (peixesFases) peixesFases.classList.add('visible');
-        // iniciar sistema de fases após bolhas aparecerem
+        document.getElementById('rankingBtn').classList.add('visible');
         initPhaseSystem();
       }, 1400);
     }, { once: true });
@@ -2001,9 +2061,10 @@
       try {
         const progress = JSON.parse(localStorage.getItem('scb_progress') || '{}');
         phases.forEach((phase, idx) => {
+          if (phase.isPortal) return;
+          phase.completed = progress[`completed_${idx + 1}`] === true;
           const saved = progress[String(idx + 1)];
-          phase.completed = Boolean(progress[`completed_${idx + 1}`] || saved?.completed || saved?.pct >= 100);
-          phase.score = saved?.score || phase.score || 0;
+          phase.score = saved?.score || 0;
         });
       } catch (_) { }
     }
@@ -2556,8 +2617,6 @@ services:
     }
 
     function completePhaseAndReturnToMap() {
-      const phase = phases[phaseBookPhaseIndex];
-      if (phase) phase.completed = true;
       hidePhaseFinishModal();
       closePhaseScreen();
       currentPhaseIndex = phaseBookPhaseIndex;

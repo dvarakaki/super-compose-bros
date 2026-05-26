@@ -141,7 +141,8 @@ function iniciarQuiz() {
   timerAtivo = true;
 
   const total = QUESTIONS.length;
-  document.getElementById('score-total').textContent = `/${total}`;
+  const MAX_SCORE = total * 150;
+  document.getElementById('score-total').textContent = `/${MAX_SCORE}`;
   renderQuestion();
 }
 
@@ -335,8 +336,20 @@ function chooseOption(idx) {
   const correct = q.correct;
   const isRight = idx === correct;
 
-  if (isRight) score++;
-  document.getElementById('score-val').textContent = score;
+  if (isRight) {
+    let pts = 50;
+    if (timerRestante > 20)      pts = 150;
+    else if (timerRestante > 10) pts = 100;
+    score += pts;
+    document.getElementById('score-val').textContent = score;
+    // Footer hint e Toast com pontuação
+    document.getElementById('footer-hint').textContent = `✓ Correto! +${pts} pts`;
+    showToast(true, `+${pts} pontos! ${timerRestante > 20 ? '⚡ Rápido!' : timerRestante > 10 ? '👍 Bom!' : '😅 Na hora!'}`);
+  } else {
+    document.getElementById('score-val').textContent = score;
+    document.getElementById('footer-hint').textContent = '✗ Resposta errada';
+    showToast(false, `Errado. Certa: "${q.options[correct]}"`);
+  }
 
   answers.push({ questionIdx: current, chosen: idx, correct: correct, right: isRight });
 
@@ -371,12 +384,6 @@ function chooseOption(idx) {
       area.appendChild(explanationEl);
     }, 300);
   }
-
-  // Footer hint
-  document.getElementById('footer-hint').textContent = isRight ? '✓ Correto!' : '✗ Resposta errada';
-
-  // Toast
-  showToast(isRight, isRight ? 'Correto! Muito bem! 🎉' : `Errado. Certa: "${q.options[correct]}"`);
 
   // Auto-advance after 1.8s (um pouco mais para ler a explicação)
   setTimeout(() => {
@@ -421,8 +428,9 @@ function transitionToReport() {
    REPORT
 ═══════════════════════════════════════════════════════════ */
 function renderReport() {
-  const total = QUESTIONS.length;
-  const pct   = Math.round((score / total) * 100);
+  const total    = QUESTIONS.length;
+  const MAX_SCORE = total * 150;
+  const pct      = Math.round((score / MAX_SCORE) * 100);
 
   let msg, sub;
   if (pct === 100)      { msg = '🏆 Perfeito!';             sub = 'Pontuação máxima! Você domina este conteúdo!'; }
@@ -501,8 +509,8 @@ function renderReport() {
             <circle class="score-ring-fill" id="ring-fill" cx="40" cy="40" r="34"/>
           </svg>
           <div class="score-ring-text">
-            <div class="score-big">${score}/${total}</div>
-            <div class="score-label">acertos</div>
+            <div class="score-big">${score}</div>
+            <div class="score-label">de ${MAX_SCORE} pts</div>
           </div>
         </div>
         <div class="report-message">${msg}</div>
@@ -510,7 +518,7 @@ function renderReport() {
         <div class="perf-bar-wrap">
           <div class="perf-bar-fill" id="perf-bar"></div>
         </div>
-        <div class="perf-pct">${pct}% de acertos</div>
+        <div class="perf-pct">${pct}% de aproveitamento</div>
       </div>
 
       <div class="detail-list">${detailsHtml}</div>
