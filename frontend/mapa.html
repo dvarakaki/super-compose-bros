@@ -1900,7 +1900,8 @@
           if (moveBoatToPhase(currentPhaseIndex - 1)) updatePhaseUI();
         }
         e.preventDefault();
-      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+        e.preventDefault();
         // avançar para a próxima fase (permitido sempre)
         if (currentPhaseIndex < phases.length - 1) {
           if (moveBoatToPhase(currentPhaseIndex + 1)) updatePhaseUI();
@@ -1921,7 +1922,15 @@
         enterPhase(idx);
       });
     });
-
+    // navecação com mouse: clicar em um peixe/portal leva o barco até ele e abre o painel da fase
+    phaseElements.forEach((el, idx) => {
+      el.addEventListener('click', () => {
+        if (!moveBoatToPhase(idx)) return;
+        updatePhaseUI();
+        // abrir painel da fase ao clicar (portal ou fase normal)
+        enterPhase(idx);
+      });
+    });
     // painel temático de fase com mapa integrado
     const phaseOverlay = document.createElement('div');
     phaseOverlay.id = 'phaseOverlay';
